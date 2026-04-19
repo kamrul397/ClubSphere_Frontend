@@ -39,11 +39,8 @@ const Navbar = () => {
               />
             </svg>
           </label>
-          <Link
-            to="/"
-            className="btn btn-ghost hover:bg-transparent px-2 h-auto min-h-fit"
-          >
-            <Logo className="h-10 w-auto" />
+          <Link to="/">
+            <Logo />
           </Link>
         </div>
         <div className="navbar-center hidden lg:flex">

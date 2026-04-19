@@ -6,11 +6,8 @@ const Footer = () => {
   return (
     <footer className="footer sm:footer-horizontal bg-neutral text-neutral-content items-center p-4">
       <aside className="grid-flow-col items-center">
-        <Link
-          to="/"
-          className="btn btn-ghost hover:bg-transparent px-2 h-auto min-h-fit"
-        >
-          <Logo className="h-10 w-auto" />
+        <Link to="/">
+          <Logo />
         </Link>
         <p>Copyright © {new Date().getFullYear()} - All right reserved</p>
       </aside>
