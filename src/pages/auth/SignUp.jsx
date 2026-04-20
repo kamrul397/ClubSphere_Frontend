@@ -1,20 +1,57 @@
 import React from "react";
-import { Link } from "react-router"; // or react-router-dom
+import { Link, useLocation, useNavigate } from "react-router"; // or react-router-dom
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { tr } from "framer-motion/client";
+import useAuth from "../../hooks/useAuth";
+import Googlelogin from "./Googlelogin";
+import axios from "axios";
 
 const SignUp = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
 
+  const { registerUser, updateUserProfile } = useAuth();
+
   const handleSignUp = (data) => {
     // Handle sign-up logic here (e.g., API call)
-    console.log("Form Data:", data);
+
+    registerUser(data.email, data.password)
+      .then((result) => {
+        // store the photo and get the url
+        const photoFile = data.photo[0];
+
+        const formData = new FormData();
+        formData.append("image", photoFile);
+        const imageAPIURL = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_imageUploadUrl}`;
+
+        axios.post(imageAPIURL, formData).then((response) => {
+          const uploadedURL = response.data.data.display_url;
+          // console.log("Success! Your Image URI is:", uploadedURL);
+          // Now you can use the uploadedURL as needed, e.g., save it to your database
+          const userInfo = {
+            displayName: data.name,
+            photoURL: uploadedURL,
+          };
+          updateUserProfile(userInfo)
+            .then(() => {
+              console.log("User profile updated successfully!");
+              navigate(location.state || "/");
+            })
+            .catch((error) => {
+              console.error("Error updating user profile:", error);
+            });
+        });
+      })
+      .catch((error) => {
+        console.error("Error signing up:", error);
+      });
   };
   return (
     <motion.div
@@ -78,27 +115,42 @@ const SignUp = () => {
             </label>
             <input
               {...register("password", {
-                required: true,
-                minLength: 6,
-                pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/,
+                required: "Password is required",
+                minLength: {
+                  value: 6,
+                  message: "Password must be at least 6 characters",
+                },
+                pattern: {
+                  value: /^(?=.*[A-Za-z])(?=.*\d).{6,}$/,
+                  message: "At least one letter and one number required",
+                },
               })}
               type="password"
               placeholder="••••••••"
-              className="input input-bordered w-full focus:input-primary transition-all duration-300"
+              className={`input input-bordered w-full focus:input-primary transition-all ${errors.password ? "input-error" : ""}`}
             />
-            {errors.password?.type === "required" && (
-              <p className="text-red-500 text-sm mt-1">Password is required</p>
-            )}
-            {errors.password?.type === "minLength" && (
-              <p className="text-red-500 text-sm mt-1">
-                Password must be at least 6 characters
+
+            {/* Shorter way to show errors */}
+            {errors.password && (
+              <p className="text-error text-sm mt-1">
+                {errors.password.message}
               </p>
             )}
-            {errors.password?.type === "pattern" && (
-              <p className="text-red-500 text-sm mt-1">
-                Password must contain at least one letter and one number
-              </p>
-            )}
+          </div>
+
+          {/* for uploading photo */}
+          <div className="form-control w-full">
+            <label className="label">
+              <span className="label-text font-semibold mb-1">
+                Upload Photo
+              </span>
+            </label>
+            <input
+              {...register("photo")}
+              type="file"
+              accept="image/*"
+              className="file-input file-input-bordered w-full"
+            />
           </div>
 
           {/* Action Button */}
@@ -112,17 +164,15 @@ const SignUp = () => {
           <div className="divider text-gray-400 text-sm">OR</div>
 
           {/* Social Login */}
-          <button className="btn btn-outline btn-neutral w-full flex items-center gap-3 hover:bg-gray-50">
-            <FcGoogle className="text-2xl" />
-            Sign up with Google
-          </button>
+          <Googlelogin></Googlelogin>
 
           {/* Footer Link */}
           <p className="text-center mt-6 text-gray-600">
             Already have an account?{" "}
             <Link
-              to="/auth/login"
+              to="/login"
               className="text-primary font-bold hover:underline"
+              state={location.state}
             >
               Sign In
             </Link>

@@ -1,8 +1,23 @@
 import React from "react";
 import Logo from "../../components/Logo";
 import { Link, NavLink } from "react-router";
+import useAuth from "../../hooks/useAuth";
 
 const Navbar = () => {
+  const { user, logOut } = useAuth();
+
+  const handleLogout = () => {
+    logOut()
+      .then(() => {
+        // Handle successful logout
+        console.log("User logged out");
+      })
+      .catch((error) => {
+        // Handle logout error
+        console.error("Error logging out:", error);
+      });
+  };
+
   const links = (
     <>
       <li>
@@ -11,6 +26,9 @@ const Navbar = () => {
 
       <li>
         <NavLink to="">Item 2</NavLink>
+      </li>
+      <li>
+        <NavLink to="/create-a-club">Create A Club</NavLink>
       </li>
     </>
   );
@@ -47,6 +65,65 @@ const Navbar = () => {
           <ul className="menu menu-horizontal px-1">{links}</ul>
         </div>
         <div className="navbar-end">
+          {/* login/logout button  */}
+          <div className="flex items-center gap-2 mr-4">
+            {user ? (
+              <div className="dropdown dropdown-end">
+                {/* The Trigger (The User's Image) */}
+                <div
+                  tabIndex={0}
+                  role="button"
+                  className="btn btn-ghost btn-circle avatar border-primary"
+                >
+                  <div className="w-10 rounded-full">
+                    <img
+                      alt="User Profile"
+                      src={
+                        user?.photoURL ||
+                        "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* The Popover/Dropdown Content */}
+                <ul
+                  tabIndex={0}
+                  className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow-2xl border border-base-200"
+                >
+                  <li className="px-4 py-2 font-bold text-primary border-b border-base-200 mb-2">
+                    {user?.displayName || "Member"}
+                  </li>
+
+                  <li>
+                    <Link to="/profile">View Profile</Link>
+                  </li>
+
+                  {/* Your "Be a Creator" button is now neat and tidy inside the menu */}
+
+                  <li className="mt-2">
+                    <button
+                      onClick={handleLogout}
+                      className="btn btn-sm btn-error btn-outline"
+                    >
+                      Logout
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <Link to="/login" className="btn btn-primary text-white">
+                Login
+              </Link>
+            )}
+
+            <li>
+              <Link to="/be-a-creator" className="text-secondary font-semibold">
+                Be a Creator
+              </Link>
+            </li>
+          </div>
+          {/* search bar */}
           <input
             type="text"
             placeholder="Search"
