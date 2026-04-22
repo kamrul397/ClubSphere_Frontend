@@ -27,9 +27,16 @@ const Navbar = () => {
       <li>
         <NavLink to="">Item 2</NavLink>
       </li>
-      <li>
-        <NavLink to="/create-a-club">Create A Club</NavLink>
-      </li>
+      {user && (
+        <>
+          <li>
+            <NavLink to="/create-a-club">Create A Club</NavLink>
+          </li>
+          <li>
+            <NavLink to="/dashboard/my-clubs">My Clubs</NavLink>
+          </li>
+        </>
+      )}
     </>
   );
   return (

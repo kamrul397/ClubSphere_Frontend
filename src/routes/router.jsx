@@ -7,6 +7,8 @@ import SignUp from "../pages/auth/SignUp";
 import PrivateRoutes from "./PrivateRoutes";
 import BeACreator from "../components/BeACreator";
 import CreateAClub from "../components/CreateAClub";
+import DashboardLayout from "../layouts/DashboardLayout";
+import MyClubs from "../pages/dashboard/MyClubs";
 
 export const router = createBrowserRouter([
   {
@@ -46,6 +48,21 @@ export const router = createBrowserRouter([
       {
         path: "signup",
         element: <SignUp></SignUp>,
+      },
+    ],
+  },
+  {
+    path: "/dashboard",
+    element: (
+      <PrivateRoutes>
+        <DashboardLayout></DashboardLayout>
+      </PrivateRoutes>
+    ),
+
+    children: [
+      {
+        path: "my-clubs",
+        element: <MyClubs></MyClubs>,
       },
     ],
   },
