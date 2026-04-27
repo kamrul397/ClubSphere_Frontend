@@ -21,6 +21,7 @@ const MyClubs = () => {
     },
     enabled: !!user?.email,
   });
+  console.log("user role", user);
 
   const handleDeleteClub = (clubId) => {
     Swal.fire({
@@ -72,6 +73,7 @@ const MyClubs = () => {
               <th>Club Name</th>
               <th>Category</th>
               <th>Membership Fee</th>
+              <th>Created At</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
@@ -97,6 +99,15 @@ const MyClubs = () => {
                 </td>
                 <td>
                   {club.membershipFee > 0 ? `$${club.membershipFee}` : "Free"}
+                </td>
+                <td>
+                  {new Date(club.createdAt)?.toLocaleString([], {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </td>
                 <td>
                   <div

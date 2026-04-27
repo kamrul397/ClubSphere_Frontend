@@ -7,10 +7,12 @@ import { tr } from "framer-motion/client";
 import useAuth from "../../hooks/useAuth";
 import Googlelogin from "./Googlelogin";
 import axios from "axios";
+import useAxiosSecure from "../../hooks/useAxiosSecure";
 
 const SignUp = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const axiosSecure = useAxiosSecure();
   const {
     register,
     handleSubmit,
@@ -19,39 +21,45 @@ const SignUp = () => {
 
   const { registerUser, updateUserProfile } = useAuth();
 
-  const handleSignUp = (data) => {
-    // Handle sign-up logic here (e.g., API call)
+  const handleSignUp = async (data) => {
+    try {
+      // 1. Create the user in Firebase Auth FIRST
+      // This will throw an error immediately if the email exists
+      const result = await registerUser(data.email, data.password);
 
-    registerUser(data.email, data.password)
-      .then((result) => {
-        // store the photo and get the url
-        const photoFile = data.photo[0];
+      // 2. ONLY if Firebase succeeds, proceed to image upload
+      const photoFile = data.photo[0];
+      const formData = new FormData();
+      formData.append("image", photoFile);
 
-        const formData = new FormData();
-        formData.append("image", photoFile);
-        const imageAPIURL = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_imageUploadUrl}`;
+      const imageAPIURL = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_imageUploadUrl}`;
+      const imageRes = await axios.post(imageAPIURL, formData);
+      const uploadedURL = imageRes.data.data.display_url;
 
-        axios.post(imageAPIURL, formData).then((response) => {
-          const uploadedURL = response.data.data.display_url;
-          // console.log("Success! Your Image URI is:", uploadedURL);
-          // Now you can use the uploadedURL as needed, e.g., save it to your database
-          const userInfo = {
-            displayName: data.name,
-            photoURL: uploadedURL,
-          };
-          updateUserProfile(userInfo)
-            .then(() => {
-              console.log("User profile updated successfully!");
-              navigate(location.state || "/");
-            })
-            .catch((error) => {
-              console.error("Error updating user profile:", error);
-            });
-        });
-      })
-      .catch((error) => {
-        console.error("Error signing up:", error);
+      const userInfo = {
+        name: data.name,
+        email: data.email,
+        photoURL: uploadedURL,
+      };
+
+      // 3. Save to MongoDB
+      await axiosSecure.post("/users", userInfo);
+
+      // 4. Update Profile
+      await updateUserProfile({
+        displayName: userInfo.name,
+        photoURL: userInfo.photoURL,
       });
+
+      navigate(location.state || "/");
+    } catch (error) {
+      // Check for existing user error
+      if (error.code === "auth/email-already-in-use") {
+        alert("This email is already registered. Please login instead.");
+      } else {
+        console.error("Sign-up process failed:", error.message);
+      }
+    }
   };
   return (
     <motion.div
@@ -164,7 +172,7 @@ const SignUp = () => {
           <div className="divider text-gray-400 text-sm">OR</div>
 
           {/* Social Login */}
-          <Googlelogin></Googlelogin>
+          <Googlelogin state={location.state}></Googlelogin>
 
           {/* Footer Link */}
           <p className="text-center mt-6 text-gray-600">

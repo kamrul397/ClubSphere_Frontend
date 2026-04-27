@@ -64,9 +64,9 @@ const Navbar = () => {
               />
             </svg>
           </label>
-          <Link to="/">
+          <span to="/">
             <Logo />
-          </Link>
+          </span>
         </div>
         <div className="navbar-center hidden lg:flex">
           <ul className="menu menu-horizontal px-1">{links}</ul>
@@ -125,7 +125,10 @@ const Navbar = () => {
             )}
 
             <li>
-              <Link to="/be-a-creator" className="text-secondary font-semibold">
+              <Link
+                to="/dashboard/be-a-creator"
+                className="text-secondary font-semibold"
+              >
                 Be a Creator
               </Link>
             </li>

@@ -9,10 +9,13 @@ import {
   FaLayerGroup,
 } from "react-icons/fa";
 import { HiUserGroup } from "react-icons/hi";
+import { FaApper } from "react-icons/fa6";
+import useRole from "../hooks/useRole";
 
 const DashboardLayout = () => {
   // TODO: Get user role from your AuthContext/Hook
-  const role = "clubManager"; // Example: 'admin' | 'clubManager' | 'member'
+  const { role } = useRole();
+  console.log(role); // Example: 'admin' | 'clubManager' | 'member'
 
   return (
     <div className="drawer lg:drawer-open">
@@ -75,6 +78,17 @@ const DashboardLayout = () => {
           {role === "admin" && (
             <>
               <li>
+                <Link to="/dashboard/users-management">
+                  <FaUsers /> Users Management
+                </Link>
+              </li>
+              <li>
+                <Link to="/dashboard/club-manager-approvals">
+                  <FaApper /> Club Manager Approvals
+                </Link>
+              </li>
+
+              <li>
                 <Link to="/dashboard/admin">
                   <FaLayerGroup /> Admin Overview
                 </Link>
@@ -119,7 +133,13 @@ const DashboardLayout = () => {
                   <FaCalendarAlt /> Events Management
                 </Link>
               </li>
+              <li>
+                <Link to="/dashboard/be-a-creator">
+                  <FaCalendarAlt /> Be A Club Manager
+                </Link>
+              </li>
               {/* dashboard links */}
+
               <li>
                 <NavLink
                   to="/dashboard/my-clubs"
@@ -129,6 +149,11 @@ const DashboardLayout = () => {
                   <span>My Clubs</span>
                 </NavLink>
               </li>
+              {/* <li>
+                <Link to="/dashboard/payment">
+                  <FaHistory /> Payment
+                </Link>
+              </li> */}
             </>
           )}
 
@@ -149,11 +174,6 @@ const DashboardLayout = () => {
                   <FaCalendarAlt /> Registered Events
                 </Link>
               </li>
-              <li>
-                <Link to="/dashboard/payment-history">
-                  <FaHistory /> Payment History
-                </Link>
-              </li>
             </>
           )}
 
@@ -164,6 +184,7 @@ const DashboardLayout = () => {
               <FaHome /> Home
             </Link>
           </li>
+
           <li>
             <Link to="/clubs">Explore Clubs</Link>
           </li>

@@ -1,20 +1,31 @@
 import React from "react";
 import { FcGoogle } from "react-icons/fc";
 import useAuth from "../../hooks/useAuth";
+import { useLocation, useNavigate } from "react-router";
+import useAxiosSecure from "../../hooks/useAxiosSecure";
 
 const Googlelogin = () => {
   const { googleSignIn } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const axiosSecure = useAxiosSecure();
 
   const handleGoogleSignIn = () => {
     googleSignIn()
-      .then((result) => {
-        // Handle successful sign-in
-        console.log("Google Sign-In successful:", result.user);
+      .then(async (result) => {
+        const user = result.user;
+        const userInfo = {
+          name: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          lastLogin: new Date(),
+        };
+
+        // Ensure user exists in DB
+        await axiosSecure.post("/users", userInfo);
+        navigate(location.state || "/");
       })
-      .catch((error) => {
-        // Handle sign-in error
-        console.error("Google Sign-In error:", error);
-      });
+      .catch((error) => console.error(error));
   };
 
   return (
