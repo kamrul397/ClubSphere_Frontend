@@ -13,6 +13,12 @@ import Payment from "../pages/Payment";
 import ApproveClubManager from "../pages/dashboard/ApproveClubManager";
 import UsersManagement from "../pages/dashboard/UsersManagement";
 import AdminRoutes from "./AdminRoutes";
+import MemberOverview from "../pages/dashboard/membersPage/MemberOverview";
+import MyJoinedClubs from "../pages/dashboard/membersPage/MyJoinedClubs";
+import RegisteredEvents from "../pages/dashboard/membersPage/RegisteredEvents";
+import ManagerOverview from "../pages/dashboard/managerPage/ManagerOverview";
+import EventsManagement from "../pages/dashboard/managerPage/EventsManagement";
+import ClubManagerRoutes from "./ClubManagerRoutes";
 
 export const router = createBrowserRouter([
   {
@@ -22,15 +28,6 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <Home></Home>,
-      },
-
-      {
-        path: "create-a-club",
-        element: (
-          <PrivateRoutes>
-            <CreateAClub></CreateAClub>
-          </PrivateRoutes>
-        ),
       },
     ],
   },
@@ -58,16 +55,56 @@ export const router = createBrowserRouter([
 
     children: [
       {
-        path: "my-clubs",
-        element: <MyClubs></MyClubs>,
-      },
-      {
         path: "payment",
         element: <Payment></Payment>,
       },
       {
         path: "be-a-creator",
         element: <BeACreator></BeACreator>,
+      },
+      {
+        path: "member",
+        element: <MemberOverview></MemberOverview>,
+      },
+      {
+        path: "my-joined-clubs",
+        element: <MyJoinedClubs></MyJoinedClubs>,
+      },
+      {
+        path: "my-events",
+        element: <RegisteredEvents></RegisteredEvents>,
+      },
+      {
+        path: "my-clubs",
+        element: (
+          <ClubManagerRoutes>
+            <MyClubs></MyClubs>,
+          </ClubManagerRoutes>
+        ),
+      },
+      {
+        path: "manager",
+        element: (
+          <ClubManagerRoutes>
+            <ManagerOverview></ManagerOverview>
+          </ClubManagerRoutes>
+        ),
+      },
+      {
+        path: "create-a-club",
+        element: (
+          <ClubManagerRoutes>
+            <CreateAClub></CreateAClub>
+          </ClubManagerRoutes>
+        ),
+      },
+      {
+        path: "events-management",
+        element: (
+          <ClubManagerRoutes>
+            <EventsManagement></EventsManagement>
+          </ClubManagerRoutes>
+        ),
       },
       {
         path: "club-manager-approvals",

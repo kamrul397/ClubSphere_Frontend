@@ -40,7 +40,12 @@ const BeACreator = () => {
       }
     } catch (error) {
       console.error(error);
-      Swal.fire("Error", "Failed to submit application.", "error");
+      Swal.fire(
+        "Error",
+        "Failed to submit application.",
+        "error",
+        error.response.data.message,
+      );
     }
   };
 

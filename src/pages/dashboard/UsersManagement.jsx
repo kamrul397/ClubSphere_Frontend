@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
 import Swal from "sweetalert2";
@@ -7,11 +7,14 @@ import axios from "axios";
 
 const UsersManagement = () => {
   const axiosSecure = useAxiosSecure();
+  const [searchText, setSearchText] = useState("");
 
   const { data: users = [], refetch } = useQuery({
-    queryKey: ["users"],
+    // Adding searchText to queryKey is correct—it triggers a refetch automatically
+    queryKey: ["users", searchText],
     queryFn: async () => {
-      const res = await axiosSecure.get("/users");
+      // Only fetch if searchText is actually used or clear it
+      const res = await axiosSecure.get(`/users?searchText=${searchText}`);
       return res.data;
     },
   });
@@ -24,7 +27,7 @@ const UsersManagement = () => {
 
     // 1. Removed semicolon after axiosSecure.patch
     axiosSecure
-      .patch(`/users/${user._id}`, roleInfo)
+      .patch(`/users/${user._id}/role`, roleInfo)
       .then((res) => {
         // 2. Added arrow '=>'
         if (res.data.modifiedCount > 0) {
@@ -51,7 +54,7 @@ const UsersManagement = () => {
       email: user.email,
     };
     axiosSecure
-      .patch(`/users/${user._id}`, roleInfo)
+      .patch(`/users/${user._id}/role`, roleInfo)
       .then((res) => {
         if (res.data.modifiedCount > 0) {
           Swal.fire({
@@ -94,6 +97,32 @@ const UsersManagement = () => {
             Review, promote, or manage all platform members.
           </p>
         </div>
+        {/* search */}
+        <label className="input">
+          <svg
+            className="h-[1em] opacity-50"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+          >
+            <g
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              strokeWidth="2.5"
+              fill="none"
+              stroke="currentColor"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </g>
+          </svg>
+          <input
+            type="search"
+            required
+            placeholder="Search users..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+        </label>
 
         <div className="stats shadow bg-white border border-gray-100">
           <div className="stat">

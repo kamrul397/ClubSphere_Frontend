@@ -21,7 +21,7 @@ const Navbar = () => {
   const links = (
     <>
       <li>
-        <NavLink to="">Item 1</NavLink>
+        <NavLink to="/dashboard/member">My Dashboard</NavLink>
       </li>
 
       <li>
@@ -30,10 +30,10 @@ const Navbar = () => {
       {user && (
         <>
           <li>
-            <NavLink to="/create-a-club">Create A Club</NavLink>
+            <NavLink to="/dashboard/create-a-club">Create A Club</NavLink>
           </li>
           <li>
-            <NavLink to="/dashboard/my-clubs">My Clubs</NavLink>
+            <NavLink to="/dashboard/my-joined-clubs">My Joined Clubs</NavLink>
           </li>
         </>
       )}

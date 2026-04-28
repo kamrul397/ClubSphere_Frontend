@@ -22,23 +22,29 @@ const SignUp = () => {
   const { registerUser, updateUserProfile } = useAuth();
 
   const handleSignUp = async (data) => {
+    // Normalize email to lowercase immediately
+    const normalizedEmail = data.email.toLowerCase();
     try {
       // 1. Create the user in Firebase Auth FIRST
       // This will throw an error immediately if the email exists
-      const result = await registerUser(data.email, data.password);
+      const result = await registerUser(normalizedEmail, data.password);
 
-      // 2. ONLY if Firebase succeeds, proceed to image upload
-      const photoFile = data.photo[0];
-      const formData = new FormData();
-      formData.append("image", photoFile);
+      // 2. Handle Image Upload (Conditional Logic)
+      let uploadedURL = ""; // Default empty or a placeholder URL string
 
-      const imageAPIURL = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_imageUploadUrl}`;
-      const imageRes = await axios.post(imageAPIURL, formData);
-      const uploadedURL = imageRes.data.data.display_url;
+      if (data.photo && data.photo.length > 0) {
+        const photoFile = data.photo[0];
+        const formData = new FormData();
+        formData.append("image", photoFile);
+
+        const imageAPIURL = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_imageUploadUrl}`;
+        const imageRes = await axios.post(imageAPIURL, formData);
+        uploadedURL = imageRes.data.data.display_url;
+      }
 
       const userInfo = {
         name: data.name,
-        email: data.email,
+        email: normalizedEmail,
         photoURL: uploadedURL,
       };
 
@@ -150,7 +156,10 @@ const SignUp = () => {
           <div className="form-control w-full">
             <label className="label">
               <span className="label-text font-semibold mb-1">
-                Upload Photo
+                Upload Photo{" "}
+                <span className="text-gray-400 font-normal ml-1">
+                  (Optional)
+                </span>
               </span>
             </label>
             <input

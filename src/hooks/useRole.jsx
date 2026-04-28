@@ -6,14 +6,17 @@ import useAxiosSecure from "./useAxiosSecure";
 const useRole = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
+
   const { data: role = "member", isLoading: roleLoading } = useQuery({
     queryKey: ["userRole", user?.email],
+    enabled: !!user?.email, // Only run if email exists
     queryFn: async () => {
       const res = await axiosSecure.get(`/users/role/${user?.email}`);
-      return res.data;
+      return res.data.role; // Extract the string specifically
     },
   });
-  return { role, isLoading: roleLoading };
+
+  return { role, roleLoading }; // Return roleLoading to match AdminRoutes usage
 };
 
 export default useRole;
