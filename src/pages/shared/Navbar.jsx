@@ -2,9 +2,11 @@ import React from "react";
 import Logo from "../../components/Logo";
 import { Link, NavLink } from "react-router";
 import useAuth from "../../hooks/useAuth";
+import useRole from "../../hooks/useRole";
 
 const Navbar = () => {
   const { user, logOut } = useAuth();
+  const { role } = useRole();
 
   const handleLogout = () => {
     logOut()
@@ -25,15 +27,23 @@ const Navbar = () => {
       </li>
 
       <li>
-        <NavLink to="">Item 2</NavLink>
+        <NavLink to="/all-clubs">All Clubs</NavLink>
       </li>
-      {user && (
+      {user && role !== "admin" && (
         <>
           <li>
             <NavLink to="/dashboard/create-a-club">Create A Club</NavLink>
           </li>
           <li>
             <NavLink to="/dashboard/my-joined-clubs">My Joined Clubs</NavLink>
+          </li>
+          <li>
+            <Link
+              to="/dashboard/be-a-creator"
+              className="text-secondary font-semibold"
+            >
+              Be a Creator
+            </Link>
           </li>
         </>
       )}
@@ -123,15 +133,6 @@ const Navbar = () => {
                 Login
               </Link>
             )}
-
-            <li>
-              <Link
-                to="/dashboard/be-a-creator"
-                className="text-secondary font-semibold"
-              >
-                Be a Creator
-              </Link>
-            </li>
           </div>
           {/* search bar */}
           <input

@@ -19,6 +19,9 @@ import RegisteredEvents from "../pages/dashboard/membersPage/RegisteredEvents";
 import ManagerOverview from "../pages/dashboard/managerPage/ManagerOverview";
 import EventsManagement from "../pages/dashboard/managerPage/EventsManagement";
 import ClubManagerRoutes from "./ClubManagerRoutes";
+import ApproveClubs from "../pages/dashboard/adminPage/ApproveClubs";
+import ClubDetails from "../pages/ClubDetails";
+import AllClubs from "../pages/dashboard/membersPage/AllClubs";
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +31,14 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <Home></Home>,
+      },
+      {
+        path: "club-details/:id",
+        element: <ClubDetails></ClubDetails>,
+      },
+      {
+        path: "all-clubs",
+        element: <AllClubs></AllClubs>,
       },
     ],
   },
@@ -119,6 +130,14 @@ export const router = createBrowserRouter([
         element: (
           <AdminRoutes>
             <UsersManagement></UsersManagement>
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "manage-clubs",
+        element: (
+          <AdminRoutes>
+            <ApproveClubs></ApproveClubs>
           </AdminRoutes>
         ),
       },

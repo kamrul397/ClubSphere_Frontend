@@ -177,7 +177,7 @@ const DashboardLayout = () => {
               </NavLink>
             </li>
             <li>
-              <NavLink to="/clubs" className={navStyle}>
+              <NavLink to="/all-clubs" className={navStyle}>
                 <FaSearch /> Explore Clubs
               </NavLink>
             </li>
