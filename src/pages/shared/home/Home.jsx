@@ -5,26 +5,37 @@ import Coverage from "./Coverage";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 import { Link } from "react-router";
+import { FaCalendarAlt, FaMapMarkerAlt } from "react-icons/fa";
 import useAuth from "../../../hooks/useAuth";
-// Correct path based on your folder structure: src/pages/home/Home.jsx -> src/hooks/
 
 const Home = () => {
   const axiosSecure = useAxiosSecure();
-  const { user } = useAuth(); // Get current logged-in user
+  const { user } = useAuth();
 
-  const { data: clubs = [], isLoading } = useQuery({
-    queryKey: ["approvedClubs", user?.email], // Include email in queryKey to refetch on login
+  // Fetch Approved Clubs
+  const { data: clubs = [], isLoading: clubsLoading } = useQuery({
+    queryKey: ["approvedClubs", user?.email],
     queryFn: async () => {
-      // Pass the user email as a query parameter
       const res = await axiosSecure.get(`/clubs/approved?email=${user?.email}`);
       return res.data;
     },
   });
+
+  // Fetch Upcoming Events
+  const { data: events = [], isLoading: eventsLoading } = useQuery({
+    queryKey: ["upcomingEvents"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/all-events");
+      return res.data;
+    },
+  });
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-slate-50">
       <Banner />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-24 py-12">
+        {/* --- Featured Clubs Section --- */}
         <section>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -40,22 +51,14 @@ const Home = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {isLoading
-              ? // Skeleton Loader
-                [1, 2, 3].map((n) => (
+            {clubsLoading
+              ? [1, 2, 3].map((n) => (
                   <div
                     key={n}
-                    className="card bg-base-100 shadow-xl animate-pulse"
-                  >
-                    <div className="bg-gray-200 h-48 w-full rounded-t-xl"></div>
-                    <div className="p-6 space-y-4">
-                      <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-4 bg-gray-200 rounded w-full"></div>
-                    </div>
-                  </div>
+                    className="card bg-base-100 shadow-xl animate-pulse h-80"
+                  ></div>
                 ))
-              : // Render approved clubs from database
-                clubs.map((club) => (
+              : clubs.slice(0, 3).map((club) => (
                   <motion.div
                     key={club._id}
                     whileHover={{ scale: 1.02 }}
@@ -65,41 +68,104 @@ const Home = () => {
                       <img
                         src={
                           club.bannerImage ||
-                          "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                          "https://via.placeholder.com/400x200"
                         }
                         alt={club.clubName}
                         className="h-48 w-full object-cover"
                       />
                     </figure>
-                    <div className="card-body">
+                    <div className="card-body p-6">
                       <h2 className="card-title text-neutral">
                         {club.clubName}
                       </h2>
                       <p className="text-sm text-gray-500 line-clamp-2">
-                        {club.description || "No description available."}
+                        {club.description}
                       </p>
                       <div className="card-actions justify-end mt-4">
-                        // Inside clubs.map logic:
-                        <div className="card-actions justify-end mt-4">
-                          <Link to={`/club-details/${club._id}`}>
-                            <button className="btn btn-primary btn-sm">
-                              View Details
-                            </button>
-                          </Link>
-                        </div>
+                        <Link
+                          to={`/club-details/${club._id}`}
+                          className="btn btn-primary btn-sm"
+                        >
+                          View Details
+                        </Link>
                       </div>
                     </div>
                   </motion.div>
                 ))}
           </div>
+        </section>
 
-          {!isLoading && clubs.length === 0 && (
-            <div className="text-center py-20">
-              <p className="text-gray-400">
-                No approved clubs to show at the moment.
-              </p>
+        {/* --- Upcoming Events Section --- */}
+        <section>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="flex justify-between items-end mb-10"
+          >
+            <div>
+              <h2 className="text-3xl font-bold text-neutral">
+                Upcoming Events
+              </h2>
+              <div className="w-20 h-1 bg-secondary mt-2"></div>
             </div>
-          )}
+            <Link
+              to="/events"
+              className="text-primary font-semibold hover:underline"
+            >
+              View All Events
+            </Link>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {eventsLoading
+              ? [1, 2, 3].map((n) => (
+                  <div
+                    key={n}
+                    className="h-40 bg-white rounded-xl shadow animate-pulse"
+                  ></div>
+                ))
+              : events.map((event) => (
+                  <motion.div
+                    key={event._id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="badge badge-secondary badge-outline">
+                        {event.category || "General"}
+                      </span>
+                      {event.eventFee > 0 ? (
+                        <span className="text-primary font-bold">
+                          ${event.eventFee}
+                        </span>
+                      ) : (
+                        <span className="text-success font-bold">FREE</span>
+                      )}
+                    </div>
+                    <h3 className="text-xl font-bold mb-2 text-slate-800">
+                      {event.title}
+                    </h3>
+                    <div className="space-y-2 mb-6 text-sm text-slate-500">
+                      <div className="flex items-center gap-2">
+                        <FaCalendarAlt className="text-primary" />
+                        {new Date(event.eventDate).toLocaleDateString()}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FaMapMarkerAlt className="text-primary" />
+                        {event.location}
+                      </div>
+                    </div>
+                    <Link
+                      to={`/events/${event._id}`}
+                      className="btn btn-outline btn-primary btn-sm mt-auto"
+                    >
+                      View Event
+                    </Link>
+                  </motion.div>
+                ))}
+          </div>
         </section>
 
         <motion.div

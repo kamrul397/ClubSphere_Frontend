@@ -110,30 +110,51 @@ const DashboardLayout = () => {
               </>
             )}
 
-            {/* Club Manager Links */}
+            {/* Club Manager Links Section in DashboardLayout.jsx */}
             {role === "clubManager" && (
               <>
                 <li>
-                  <NavLink to="/dashboard/manager" className={navStyle}>
+                  <NavLink
+                    to="/dashboard/manager-overview"
+                    className={navStyle}
+                  >
                     <FaLayerGroup /> Overview
                   </NavLink>
                 </li>
                 <li>
-                  <NavLink to="/create-a-club" className={navStyle}>
+                  <NavLink to="/dashboard/create-a-club" className={navStyle}>
                     <FaPlusCircle /> Create A Club
                   </NavLink>
                 </li>
-                <li>
+                {/* <li>
                   <NavLink
                     to="/dashboard/events-management"
                     className={navStyle}
                   >
-                    <FaCalendarAlt /> Events
+                    <FaCalendarAlt />My Events
                   </NavLink>
-                </li>
+                </li> */}
                 <li>
                   <NavLink to="/dashboard/my-clubs" className={navStyle}>
                     <HiUserGroup /> My Clubs
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/dashboard/my-events" className={navStyle}>
+                    <HiUserGroup /> My Events
+                  </NavLink>
+                </li>
+
+                {/* Nested Sub-menu Item */}
+                <li className="pl-6">
+                  {/* Indent for visual nesting */}
+                  <NavLink
+                    // This link targets the nested route
+                    to="/dashboard/my-clubs/manage-club-members"
+                    className={navStyle}
+                  >
+                    <FaApper className="text-xs" />
+                    <span className="text-sm">Manage Club Members</span>
                   </NavLink>
                 </li>
               </>
@@ -147,13 +168,17 @@ const DashboardLayout = () => {
                     <FaLayerGroup /> Overview
                   </NavLink>
                 </li>
+
                 <li>
                   <NavLink to="/dashboard/my-joined-clubs" className={navStyle}>
                     <FaHome /> Joined Clubs
                   </NavLink>
                 </li>
                 <li>
-                  <NavLink to="/dashboard/my-events" className={navStyle}>
+                  <NavLink
+                    to="/dashboard/member-joined-events"
+                    className={navStyle}
+                  >
                     <FaCalendarAlt /> My Events
                   </NavLink>
                 </li>
@@ -171,6 +196,11 @@ const DashboardLayout = () => {
                 Portal
               </p>
             </div>
+            <li>
+              <NavLink to="/all-events" className={navStyle}>
+                <FaLayerGroup /> All Events
+              </NavLink>
+            </li>
             <li>
               <NavLink to="/" className={navStyle}>
                 <FaHome /> Home Page

@@ -1,70 +1,100 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import useAxiosSecure from "../../hooks/useAxiosSecure";
-import Swal from "sweetalert2";
-import useAuth from "../../hooks/useAuth";
 
-const CreateAClub = () => {
+import Swal from "sweetalert2";
+
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import useAuth from "../../../hooks/useAuth";
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
+
+const ClubForm = () => {
+  const { id } = useParams(); // If id exists, we are EDITING
+  const isEditMode = !!id;
+
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
+    reset,
+    setValue,
     formState: { errors },
   } = useForm();
+
+  // 1. Fetch data ONLY if in Edit Mode
+  const { data: club, isLoading } = useQuery({
+    queryKey: ["club", id],
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/clubs/${id}`);
+      return res.data;
+    },
+    enabled: isEditMode, // Only run this query if there is an ID
+  });
+
+  // 2. Pre-fill form when data arrives
+  useEffect(() => {
+    if (isEditMode && club) {
+      reset(club); // Automatically fills all matching fields
+    }
+  }, [club, isEditMode, reset]);
 
   const onSubmit = async (data) => {
     const clubInfo = {
       ...data,
       membershipFee: parseFloat(data.membershipFee) || 0,
-      status: "pending",
       managerEmail: user?.email || "unknown",
-      createdAt: new Date(),
+      updatedAt: new Date(),
     };
-    console.log("clubinfo", clubInfo);
 
     try {
-      // 1. Make the request and wait for the response
-      const res = await axiosSecure.post("/clubs", clubInfo);
+      let res;
+      if (isEditMode) {
+        // UPDATE EXISTING CLUB[cite: 8]
+        // Remove _id from data before sending to avoid MongoDB errors
+        const { _id, ...updateData } = clubInfo;
+        res = await axiosSecure.patch(`/clubs/${id}`, updateData);
+      } else {
+        // CREATE NEW CLUB[cite: 8]
+        clubInfo.status = "pending";
+        clubInfo.createdAt = new Date();
+        res = await axiosSecure.post("/clubs", clubInfo);
+      }
 
-      // 2. Check the response directly
-      if (res.data.insertedId) {
+      if (res.data.insertedId || res.data.modifiedCount > 0) {
         Swal.fire({
           title: "Success!",
-          text: "Club registration request submitted successfully.",
+          text: `Club ${isEditMode ? "updated" : "registration request submitted"} successfully.`,
           icon: "success",
-          confirmButtonText: "Cool",
           confirmButtonColor: "#570df8",
         });
-
-        // Recommended: Reset the form here
-        // reset();
+        if (!isEditMode) reset();
+        navigate("/dashboard/my-clubs");
       }
     } catch (error) {
-      // 3. Handle errors (like server down or 404)
-      Swal.fire({
-        title: "Error!",
-        text: "Something went wrong. Please try again.",
-        icon: "error",
-        confirmButtonText: "Ok",
-      });
-      console.error(error);
+      Swal.fire("Error!", "Something went wrong.", "error");
     }
   };
+
+  if (isEditMode && isLoading)
+    return <div className="p-10 text-center">Loading Club Data...</div>;
+
   return (
     <div className="min-h-screen bg-base-200 py-10 px-5">
       <div className="max-w-4xl mx-auto bg-base-100 shadow-xl rounded-2xl overflow-hidden">
-        {/* Header Section */}
         <div className="bg-primary p-8 text-primary-content text-center">
           <h2 className="text-3xl font-bold uppercase tracking-wide">
-            Start Your Community
+            {isEditMode ? "Edit Club Details" : "Start Your Community"}
           </h2>
           <p className="opacity-90 mt-2">
-            Fill in the details below to register your new club on ClubSphere.
+            {isEditMode
+              ? `Updating ${club?.clubName}`
+              : "Fill in the details to register your new club."}
           </p>
         </div>
 
-        {/* Form Section */}
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -74,15 +104,9 @@ const CreateAClub = () => {
             <label className="label font-semibold">Club Name</label>
             <input
               type="text"
-              placeholder="e.g. Peak Hikers"
-              className={`input input-bordered ${errors.clubName ? "input-error" : ""}`}
+              className="input input-bordered"
               {...register("clubName", { required: "Club name is required" })}
             />
-            {errors.clubName && (
-              <span className="text-error text-sm mt-1">
-                {errors.clubName.message}
-              </span>
-            )}
           </div>
 
           {/* Category */}
@@ -101,12 +125,11 @@ const CreateAClub = () => {
 
           {/* Location */}
           <div className="form-control">
-            <label className="label font-semibold">Location (City/Area)</label>
+            <label className="label font-semibold">Location</label>
             <input
               type="text"
-              placeholder="e.g. New York, NY"
               className="input input-bordered"
-              {...register("location", { required: "Location is required" })}
+              {...register("location", { required: true })}
             />
           </div>
 
@@ -115,15 +138,9 @@ const CreateAClub = () => {
             <label className="label font-semibold">Membership Fee ($)</label>
             <input
               type="number"
-              defaultValue="0"
               className="input input-bordered"
-              {...register("membershipFee", { required: true, min: 0 })}
+              {...register("membershipFee", { required: true })}
             />
-            <label className="label">
-              <span className="label-text-alt text-gray-500">
-                Enter 0 for a free club.
-              </span>
-            </label>
           </div>
 
           {/* Banner Image URL */}
@@ -131,11 +148,8 @@ const CreateAClub = () => {
             <label className="label font-semibold">Banner Image URL</label>
             <input
               type="url"
-              placeholder="https://images.unsplash.com/your-image-link"
               className="input input-bordered"
-              {...register("bannerImage", {
-                required: "Please provide a banner image URL",
-              })}
+              {...register("bannerImage", { required: true })}
             />
           </div>
 
@@ -144,33 +158,15 @@ const CreateAClub = () => {
             <label className="label font-semibold">Club Description</label>
             <textarea
               className="textarea textarea-bordered h-32"
-              placeholder="Tell people what your club is all about..."
-              {...register("description", {
-                required: "Description is required",
-              })}
-            ></textarea>
-          </div>
-          {/* User Email */}
-          <div className="form-control md:col-span-2">
-            <label className="label font-semibold">Your Email</label>
-            <input
-              type="email"
-              disabled={true}
-              defaultValue={user?.email || ""}
-              className="input input-bordered"
-              {...register("userEmail", { required: "Your email is required" })}
+              {...register("description", { required: true })}
             />
           </div>
 
           {/* Submit Button */}
           <div className="md:col-span-2 mt-4">
             <button type="submit" className="btn btn-primary w-full text-lg">
-              Create Club Request
+              {isEditMode ? "Save Changes" : "Create Club Request"}
             </button>
-            <p className="text-center text-xs text-gray-500 mt-3">
-              Note: Your club will be marked as **Pending** until an Admin
-              approves it.
-            </p>
           </div>
         </form>
       </div>
@@ -178,4 +174,4 @@ const CreateAClub = () => {
   );
 };
 
-export default CreateAClub;
+export default ClubForm;

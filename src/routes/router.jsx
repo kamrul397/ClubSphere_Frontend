@@ -6,7 +6,7 @@ import Login from "../pages/auth/Login";
 import SignUp from "../pages/auth/SignUp";
 import PrivateRoutes from "./PrivateRoutes";
 import BeACreator from "../pages/dashboard/BeACreator";
-import CreateAClub from "../pages/dashboard/CreateAClub";
+
 import DashboardLayout from "../layouts/DashboardLayout";
 import MyClubs from "../pages/dashboard/MyClubs";
 import Payment from "../pages/Payment";
@@ -15,13 +15,24 @@ import UsersManagement from "../pages/dashboard/UsersManagement";
 import AdminRoutes from "./AdminRoutes";
 import MemberOverview from "../pages/dashboard/membersPage/MemberOverview";
 import MyJoinedClubs from "../pages/dashboard/membersPage/MyJoinedClubs";
-import RegisteredEvents from "../pages/dashboard/membersPage/RegisteredEvents";
+
 import ManagerOverview from "../pages/dashboard/managerPage/ManagerOverview";
-import EventsManagement from "../pages/dashboard/managerPage/EventsManagement";
+
 import ClubManagerRoutes from "./ClubManagerRoutes";
 import ApproveClubs from "../pages/dashboard/adminPage/ApproveClubs";
 import ClubDetails from "../pages/ClubDetails";
 import AllClubs from "../pages/dashboard/membersPage/AllClubs";
+import ManageClubMembers from "../pages/dashboard/managerPage/ManageClubMembers";
+
+import ManageEvents from "../pages/dashboard/managerPage/ManageEvents";
+import EditClub from "../pages/dashboard/managerPage/EditClub";
+import ClubForm from "../pages/dashboard/managerPage/ClubForm";
+import CreateEvent from "../pages/dashboard/managerPage/CreateEvent";
+import MyEvents from "../pages/dashboard/managerPage/MyEvents";
+import AllEvents from "../pages/dashboard/membersPage/AllEvents";
+import EventDetails from "../pages/dashboard/membersPage/EventDetails";
+import MemberJoinedEvents from "../pages/dashboard/membersPage/MemberJoinedEvents";
+import EventParticipants from "../pages/dashboard/managerPage/EventParticipants";
 
 export const router = createBrowserRouter([
   {
@@ -39,6 +50,14 @@ export const router = createBrowserRouter([
       {
         path: "all-clubs",
         element: <AllClubs></AllClubs>,
+      },
+      {
+        path: "all-events",
+        element: <AllEvents></AllEvents>,
+      },
+      {
+        path: "events/:id", // This :id will be the clubId from your event
+        element: <EventDetails></EventDetails>,
       },
     ],
   },
@@ -82,41 +101,91 @@ export const router = createBrowserRouter([
         element: <MyJoinedClubs></MyJoinedClubs>,
       },
       {
-        path: "my-events",
-        element: <RegisteredEvents></RegisteredEvents>,
+        path: "member-joined-events",
+        element: <MemberJoinedEvents></MemberJoinedEvents>,
       },
+
       {
         path: "my-clubs",
         element: (
           <ClubManagerRoutes>
-            <MyClubs></MyClubs>,
+            {/* Use a wrapper or ensure MyClubs handles child rendering if needed */}
+            <MyClubs />
           </ClubManagerRoutes>
         ),
+        children: [
+          {
+            // This will match /dashboard/my-clubs/manage-club-members/:clubId
+            path: "manage-club-members/:clubId",
+            element: <ManageClubMembers />,
+          },
+          {
+            // Match exactly /dashboard/my-clubs/manage-club-members
+            path: "manage-club-members",
+            element: <ManageClubMembers />,
+          },
+          {
+            path: "manage-events/:clubId",
+            element: <ManageEvents></ManageEvents>,
+          },
+          // router.js
+          {
+            path: "create-event/:clubId", // For New
+            element: <CreateEvent />,
+          },
+          {
+            path: "edit-event/:eventId", // For Edit
+            element: <CreateEvent />,
+          },
+          {
+            path: "event-participants/:eventId",
+            element: <EventParticipants />,
+          },
+        ],
       },
       {
-        path: "manager",
-        element: (
-          <ClubManagerRoutes>
-            <ManagerOverview></ManagerOverview>
-          </ClubManagerRoutes>
-        ),
+        path: "manager-overview",
+        element: <ManagerOverview></ManagerOverview>,
       },
+      {
+        path: "my-events",
+        element: <MyEvents></MyEvents>,
+      },
+
       {
         path: "create-a-club",
         element: (
           <ClubManagerRoutes>
-            <CreateAClub></CreateAClub>
+            <ClubForm />
           </ClubManagerRoutes>
         ),
       },
+      // Route for EDITING an existing club
       {
-        path: "events-management",
+        path: "edit-club/:id",
         element: (
           <ClubManagerRoutes>
-            <EventsManagement></EventsManagement>
+            <ClubForm />
           </ClubManagerRoutes>
         ),
       },
+
+      // {
+      //   path: "manage-club-members/:clubId",
+      //   element: (
+      //     <ClubManagerRoutes>
+      //       <ManageClubMembers></ManageClubMembers>
+      //     </ClubManagerRoutes>
+      //   ),
+      // },
+      // {
+      //   path: "events-management",
+      //   element: (
+      //     <ClubManagerRoutes>
+      //       <EventsManagement></EventsManagement>
+      //     </ClubManagerRoutes>
+      //   ),
+      // },
       {
         path: "club-manager-approvals",
         element: (

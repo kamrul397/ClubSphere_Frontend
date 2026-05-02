@@ -2,12 +2,21 @@ import React from "react";
 import useAuth from "../../hooks/useAuth";
 import useAxiosSecure from "./../../hooks/useAxiosSecure";
 import { useQuery } from "@tanstack/react-query";
-import { FaTrashCan } from "react-icons/fa6";
+import {
+  FaTrashCan,
+  FaPenToSquare,
+  FaUsers,
+  FaCalendarDays,
+} from "react-icons/fa6";
 import Swal from "sweetalert2";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import useClubStore from "../../store/useClubStore";
 
 const MyClubs = () => {
+  const setSelectedClub = useClubStore((state) => state.setSelectedClub);
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
+  const location = useLocation();
 
   const {
     data: myClubs = [],
@@ -21,29 +30,23 @@ const MyClubs = () => {
     },
     enabled: !!user?.email,
   });
-  console.log("user role", user);
 
   const handleDeleteClub = (clubId) => {
     Swal.fire({
       title: "Are you sure?",
-      text: "You won't be able to revert this!",
+      text: "This club request will be permanently removed!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
       confirmButtonText: "Yes, delete it!",
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
           const res = await axiosSecure.delete(`/clubs/${clubId}`);
           if (res.data.deletedCount > 0) {
-            // Refetch the data so the UI updates
             refetch();
-            Swal.fire(
-              "Deleted!",
-              "Your club request has been removed.",
-              "success",
-            );
+            Swal.fire("Deleted!", "The club has been removed.", "success");
           }
         } catch (error) {
           Swal.fire("Error", "Could not delete the club.", "error");
@@ -53,65 +56,92 @@ const MyClubs = () => {
   };
 
   if (isLoading)
-    return <div className="p-10 text-center text-2xl">Loading Clubs...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <span className="loading loading-ring loading-lg text-primary"></span>
+      </div>
+    );
+
+  // Check if we are currently in a sub-management view[cite: 10]
+  const isManaging =
+    location.pathname.includes("manage-club-members") ||
+    location.pathname.includes("manage-events") ||
+    location.pathname.includes("create-event") || // Add this
+    location.pathname.includes("edit-event") ||
+    location.pathname.includes("event-participants");
+
+  if (isManaging) {
+    return <Outlet />;
+  }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">
-          My Requested Clubs: {myClubs.length}
-        </h2>
+    <div className="p-4 md:p-8 bg-base-100 min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h2 className="text-3xl font-extrabold text-base-content">
+            My Clubs
+          </h2>
+          <p className="text-sm text-base-content/60">
+            You have requested {myClubs.length} clubs so far.
+          </p>
+        </div>
+        <Link
+          to="/dashboard/create-a-club"
+          className="btn btn-primary btn-sm md:btn-md shadow-md"
+        >
+          + Create New Club
+        </Link>
       </div>
 
-      <div className="overflow-x-auto shadow-lg rounded-lg border border-base-300">
-        <table className="table w-full">
-          {/* Table Head */}
-          <thead className="bg-primary text-primary-content">
+      <div className="overflow-x-auto bg-base-100 rounded-2xl shadow-xl border border-base-200">
+        <table className="table table-zebra w-full">
+          {/* Head */}
+          <thead className="bg-base-200 text-base-content/70">
             <tr>
-              <th>#</th>
-              <th>Banner</th>
-              <th>Club Name</th>
+              <th className="rounded-tl-2xl">Club Info</th>
               <th>Category</th>
-              <th>Membership Fee</th>
-              <th>Created At</th>
+              <th>Fee</th>
               <th>Status</th>
-              <th>Action</th>
+              <th className="text-center rounded-tr-2xl">Actions</th>
             </tr>
           </thead>
 
-          {/* Table Body */}
           <tbody>
-            {myClubs.map((club, index) => (
-              <tr key={club._id} className="hover:bg-base-200">
-                <th>{index + 1}</th>
+            {myClubs.map((club) => (
+              <tr
+                key={club._id}
+                className="hover:bg-base-200 transition-colors"
+              >
                 <td>
-                  <div className="avatar">
-                    <div className="mask mask-squircle w-12 h-12">
-                      <img src={club.bannerImage} alt={club.clubName} />
+                  <div className="flex items-center gap-4">
+                    <div className="avatar">
+                      <div className="mask mask-squircle w-14 h-14 shadow-sm border border-base-300">
+                        <img src={club.bannerImage} alt={club.clubName} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-lg">{club.clubName}</div>
+                      <div className="text-xs opacity-50 uppercase tracking-tighter">
+                        Created: {new Date(club.createdAt).toLocaleDateString()}
+                      </div>
                     </div>
                   </div>
                 </td>
-                <td className="font-bold">{club.clubName}</td>
                 <td>
-                  <span className="badge badge-ghost badge-sm">
+                  <span className="badge badge-outline badge-md py-3 px-4 border-base-300">
                     {club.category}
                   </span>
                 </td>
-                <td>
-                  {club.membershipFee > 0 ? `$${club.membershipFee}` : "Free"}
-                </td>
-                <td>
-                  {new Date(club.createdAt)?.toLocaleString([], {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                <td className="font-medium text-base-content">
+                  {club.membershipFee > 0 ? (
+                    <span className="text-success">${club.membershipFee}</span>
+                  ) : (
+                    <span className="text-info">Free</span>
+                  )}
                 </td>
                 <td>
                   <div
-                    className={`badge font-semibold ${
+                    className={`badge badge-sm font-bold uppercase p-3 ${
                       club.status === "pending"
                         ? "badge-warning"
                         : club.status === "approved"
@@ -122,22 +152,63 @@ const MyClubs = () => {
                     {club.status}
                   </div>
                 </td>
-                <td>
-                  <button className="btn btn-ghost btn-xs text-primary">
-                    Details
-                  </button>
 
-                  <button
-                    className="btn btn-ghost btn-xs text-primary"
-                    onClick={() => handleDeleteClub(club._id)}
-                  >
-                    <FaTrashCan></FaTrashCan>
-                  </button>
+                <td>
+                  <div className="flex items-center justify-center gap-2">
+                    {club.status === "approved" ? (
+                      <div className="join">
+                        <Link
+                          to={`/dashboard/my-clubs/manage-club-members/${club._id}`}
+                          onClick={() => setSelectedClub(club)}
+                          className="btn btn-ghost btn-sm join-item text-secondary tooltip"
+                          data-tip="Manage Members"
+                        >
+                          <FaUsers size={18} />
+                        </Link>
+                        <Link
+                          to={`/dashboard/my-clubs/manage-events/${club._id}`}
+                          onClick={() => setSelectedClub(club)}
+                          className="btn btn-ghost btn-sm join-item text-accent tooltip"
+                          data-tip="Manage Events"
+                        >
+                          <FaCalendarDays size={18} />
+                        </Link>
+                        <Link
+                          to={`/dashboard/edit-club/${club._id}`}
+                          onClick={() => setSelectedClub(club)}
+                          className="btn btn-ghost btn-sm join-item text-warning tooltip"
+                          data-tip="Edit Club"
+                        >
+                          <FaPenToSquare size={18} />
+                        </Link>
+                      </div>
+                    ) : (
+                      <span className="text-xs italic opacity-40">
+                        Awaiting Approval
+                      </span>
+                    )}
+
+                    <div className="divider divider-horizontal mx-0"></div>
+
+                    <button
+                      className="btn btn-ghost btn-sm text-error tooltip"
+                      data-tip="Delete Club"
+                      onClick={() => handleDeleteClub(club._id)}
+                    >
+                      <FaTrashCan size={18} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {myClubs.length === 0 && (
+          <div className="text-center py-10 opacity-50">
+            <p>No clubs found. Start by creating one!</p>
+          </div>
+        )}
       </div>
     </div>
   );
