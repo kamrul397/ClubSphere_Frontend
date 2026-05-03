@@ -1,21 +1,15 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, NavLink } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { FaArrowLeft, FaUsers } from "react-icons/fa6";
 
-import Swal from "sweetalert2";
-import { FaTrashCan } from "react-icons/fa6";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const EventParticipants = () => {
   const { eventId } = useParams();
   const axiosSecure = useAxiosSecure();
 
-  // Fetch participants
-  const {
-    data: participants = [],
-    isLoading,
-    refetch,
-  } = useQuery({
+  const { data: participants = [], isLoading } = useQuery({
     queryKey: ["event-participants", eventId],
     queryFn: async () => {
       const res = await axiosSecure.get(`/event-registrations/${eventId}`);
@@ -24,95 +18,111 @@ const EventParticipants = () => {
     enabled: !!eventId,
   });
 
-  // Delete participant
-  const handleDelete = async (email) => {
-    const confirm = await Swal.fire({
-      title: "Remove Participant?",
-      text: "This action cannot be undone",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, remove",
-      confirmButtonColor: "#ef4444",
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    try {
-      await axiosSecure.delete(
-        `/event-registrations?email=${email}&eventId=${eventId}`,
-      );
-
-      Swal.fire("Removed!", "Participant has been removed", "success");
-      refetch();
-    } catch (error) {
-      Swal.fire("Error", "Failed to remove participant", "error");
-    }
-  };
-
-  // Loading UI
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="h-full flex justify-center items-center">
         <span className="loading loading-spinner loading-lg text-primary"></span>
       </div>
     );
   }
 
+  const eventTitle = participants[0]?.eventTitle || "Event";
+
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">
-        Event Participants ({participants.length})
-      </h2>
+    <div className="h-full min-h-0 overflow-hidden bg-base-100 flex flex-col">
+      {/* Header */}
+      <div className="shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-3">
+        <div>
+          <h2 className="text-2xl font-extrabold text-base-content leading-tight flex items-center gap-2">
+            <FaUsers className="text-primary" />
+            Event Participants
+          </h2>
 
-      <div className="overflow-x-auto bg-base-100 shadow rounded-xl">
-        <table className="table table-zebra w-full">
-          <thead className="bg-base-200">
-            <tr>
-              <th>#</th>
-              <th>User</th>
-              <th>Email</th>
-              <th>Joined At</th>
-              <th className="text-center">Action</th>
-            </tr>
-          </thead>
+          <p className="text-sm text-base-content/60 leading-tight">
+            {eventTitle} • Total joined: {participants.length}
+          </p>
+        </div>
 
-          <tbody>
-            {participants.length > 0 ? (
-              participants.map((p, index) => (
-                <tr key={p._id || index}>
-                  <td>{index + 1}</td>
+        <NavLink to={-1} className="btn btn-outline btn-sm min-h-0 h-9 px-3">
+          <FaArrowLeft size={13} />
+          Back
+        </NavLink>
+      </div>
 
-                  <td className="font-medium">
-                    {p.userName || "Unknown User"}
-                  </td>
+      {/* Table */}
+      <div className="min-h-0 flex-1 overflow-hidden bg-base-100 rounded-2xl shadow-xl border border-base-200">
+        <div className="h-full overflow-x-auto overflow-y-auto">
+          <table className="table table-xs table-zebra w-full text-xs [&_th]:py-2 [&_td]:py-2 [&_th]:px-3 [&_td]:px-3">
+            <thead className="bg-base-200 text-base-content/70 sticky top-0 z-10">
+              <tr className="whitespace-nowrap">
+                <th>#</th>
+                <th>Event Title</th>
+                <th>User Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Registered At</th>
+              </tr>
+            </thead>
 
-                  <td>{p.userEmail}</td>
+            <tbody>
+              {participants.length > 0 ? (
+                participants.map((participant, index) => {
+                  const registeredDate =
+                    participant.registeredAt ||
+                    participant.joinedAt ||
+                    participant.createdAt;
 
-                  <td>
-                    {p.joinedAt
-                      ? new Date(p.joinedAt).toLocaleDateString()
-                      : "N/A"}
-                  </td>
-
-                  <td className="text-center">
-                    <button
-                      onClick={() => handleDelete(p.userEmail)}
-                      className="btn btn-sm btn-error text-white"
+                  return (
+                    <tr
+                      key={participant._id || index}
+                      className="whitespace-nowrap"
                     >
-                      <FaTrashCan />
-                    </button>
+                      <td>{index + 1}</td>
+
+                      <td className="font-semibold max-w-[180px] truncate">
+                        {participant.eventTitle || "N/A"}
+                      </td>
+
+                      <td className="font-medium max-w-[160px] truncate">
+                        {participant.userName || "Unknown User"}
+                      </td>
+
+                      <td className="max-w-[260px] truncate">
+                        {participant.userEmail || "N/A"}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`badge badge-xs min-h-0 h-5 px-2 ${
+                            participant.status === "registered"
+                              ? "badge-success"
+                              : participant.status === "cancelled"
+                                ? "badge-warning"
+                                : "badge-ghost"
+                          }`}
+                        >
+                          {participant.status || "N/A"}
+                        </span>
+                      </td>
+
+                      <td>
+                        {registeredDate
+                          ? new Date(registeredDate).toLocaleString()
+                          : "N/A"}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center py-8 opacity-60">
+                    No participants found for this event.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="5" className="text-center py-6 opacity-60">
-                  No participants found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

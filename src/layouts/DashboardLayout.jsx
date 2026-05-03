@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, Outlet } from "react-router"; // Use NavLink for active states
+import { Link, NavLink, Outlet } from "react-router";
 import {
   FaHome,
   FaUsers,
@@ -10,217 +10,257 @@ import {
   FaSearch,
 } from "react-icons/fa";
 import { HiUserGroup } from "react-icons/hi";
-import { FaApper } from "react-icons/fa6";
+import { FaApper, FaUserCheck } from "react-icons/fa6";
 import useRole from "../hooks/useRole";
-import Logo from "../components/Logo";
 
 const DashboardLayout = () => {
   const { role } = useRole();
 
-  // Reusable style logic for NavLinks
   const navStyle = ({ isActive }) =>
-    `flex items-center   rounded-lg transition-all duration-300 font-medium ${
+    `flex w-full min-w-0 items-center gap-3 rounded-lg px-4 py-2 font-medium transition-all duration-300 ${
       isActive
-        ? "bg-primary text-white shadow-md transform scale-105"
+        ? "bg-primary text-white shadow-md"
         : "text-gray-600 hover:bg-base-200 hover:text-primary"
     }`;
 
   return (
-    <div className="drawer lg:drawer-open">
+    <div className="drawer lg:drawer-open fixed inset-0 h-dvh w-screen overflow-hidden bg-slate-50">
       <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
 
       {/* Page Content */}
-      <div className="drawer-content flex flex-col bg-slate-50">
+      <div className="drawer-content flex h-dvh min-h-0 flex-col overflow-hidden bg-slate-50">
         {/* Top Navbar for Mobile */}
-        <div className="navbar bg-white lg:hidden shadow-sm px-4">
+        <div className="navbar shrink-0 bg-white px-4 shadow-sm lg:hidden">
           <div className="flex-none">
             <label htmlFor="my-drawer-2" className="btn btn-square btn-ghost">
-              <Logo></Logo>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h8m-8 6h16"
+                />
+              </svg>
             </label>
           </div>
-          <div className="flex-1 px-2 font-bold text-primary tracking-tighter">
+
+          <Link
+            to="/"
+            className="flex flex-1 items-center gap-2 px-2 font-bold tracking-tighter text-primary"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
+              <FaLayerGroup />
+            </div>
             CLUBSPHERE
-          </div>
+          </Link>
         </div>
 
         {/* Main Dashboard Content */}
-        <div className="p-4 md:p-8 min-h-screen">
-          <div className="max-w-7xl mx-auto">
+        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8">
+          <div className="mx-auto h-full max-w-7xl">
             <Outlet />
           </div>
-        </div>
+        </main>
       </div>
 
       {/* Sidebar Navigation */}
-      <div className="drawer-side z-50">
+      <div className="drawer-side z-50 h-dvh overflow-hidden">
         <label htmlFor="my-drawer-2" className="drawer-overlay"></label>
-        <div className="menu p-6 w-72 min-h-full bg-white text-base-content border-r border-base-200">
-          {/* Logo Section */}
-          <div className="flex flex-col items-center mb-10">
-            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg mb-3">
-              <FaLayerGroup className="text-white text-2xl" />
+
+        <aside className="flex h-dvh w-72 max-w-72 flex-col overflow-hidden border-r border-base-200 bg-white p-6 text-base-content">
+          {/* Clickable Logo Section */}
+          <Link
+            to="/"
+            className="mb-8 flex shrink-0 flex-col items-center rounded-2xl p-2 transition-all duration-300 hover:bg-base-200"
+          >
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-lg">
+              <FaLayerGroup className="text-2xl text-white" />
             </div>
+
             <h1 className="text-xl font-bold tracking-tight text-gray-800">
               ClubSphere <span className="text-primary">.</span>
             </h1>
-            <span className="badge badge-sm badge-ghost opacity-70 mt-1 uppercase tracking-widest text-[9px]">
+
+            <span className="badge badge-sm badge-ghost mt-1 text-[9px] uppercase tracking-widest opacity-70">
               {role || "user"} Mode
             </span>
-          </div>
+          </Link>
 
-          <ul className="space-y-2">
-            <p className="text-[11px] font-bold text-gray-400 tracking-widest ml-4 mb-2 uppercase">
-              Main Menu
-            </p>
-
-            {/* Admin Links */}
-            {role === "admin" && (
-              <>
-                <li>
-                  <NavLink
-                    to="/dashboard/users-management"
-                    className={navStyle}
-                  >
-                    <FaUsers /> Users Management
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to="/dashboard/club-manager-approvals"
-                    className={navStyle}
-                  >
-                    <FaApper /> Approvals
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/dashboard/admin" className={navStyle}>
-                    <FaLayerGroup /> Admin Overview
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/dashboard/manage-clubs" className={navStyle}>
-                    <FaHome /> Manage Clubs
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/dashboard/payments" className={navStyle}>
-                    <FaHistory /> Transactions
-                  </NavLink>
-                </li>
-              </>
-            )}
-
-            {/* Club Manager Links Section in DashboardLayout.jsx */}
-            {role === "clubManager" && (
-              <>
-                <li>
-                  <NavLink
-                    to="/dashboard/manager-overview"
-                    className={navStyle}
-                  >
-                    <FaLayerGroup /> Overview
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/dashboard/create-a-club" className={navStyle}>
-                    <FaPlusCircle /> Create A Club
-                  </NavLink>
-                </li>
-                {/* <li>
-                  <NavLink
-                    to="/dashboard/events-management"
-                    className={navStyle}
-                  >
-                    <FaCalendarAlt />My Events
-                  </NavLink>
-                </li> */}
-                <li>
-                  <NavLink to="/dashboard/my-clubs" className={navStyle}>
-                    <HiUserGroup /> My Clubs
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/dashboard/my-events" className={navStyle}>
-                    <HiUserGroup /> My Events
-                  </NavLink>
-                </li>
-
-                {/* Nested Sub-menu Item */}
-                <li className="pl-6">
-                  {/* Indent for visual nesting */}
-                  <NavLink
-                    // This link targets the nested route
-                    to="/dashboard/my-clubs/manage-club-members"
-                    className={navStyle}
-                  >
-                    <FaApper className="text-xs" />
-                    <span className="text-sm">Manage Club Members</span>
-                  </NavLink>
-                </li>
-              </>
-            )}
-
-            {/* Member Links */}
-            {role === "member" && (
-              <>
-                <li>
-                  <NavLink to="/dashboard/member" className={navStyle}>
-                    <FaLayerGroup /> Overview
-                  </NavLink>
-                </li>
-
-                <li>
-                  <NavLink to="/dashboard/my-joined-clubs" className={navStyle}>
-                    <FaHome /> Joined Clubs
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to="/dashboard/member-joined-events"
-                    className={navStyle}
-                  >
-                    <FaCalendarAlt /> My Events
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink to="/dashboard/be-a-creator" className={navStyle}>
-                    <FaPlusCircle /> Become Manager
-                  </NavLink>
-                </li>
-              </>
-            )}
-
-            {/* Shared Links */}
-            <div className="pt-6 pb-2">
-              <p className="text-[11px] font-bold text-gray-400 tracking-widest ml-4 uppercase">
-                Portal
+          {/* Scrollable sidebar links */}
+          <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">
+            <ul className="menu w-full space-y-1 overflow-x-hidden p-0">
+              <p className="mb-2 ml-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                Main Menu
               </p>
-            </div>
-            <li>
-              <NavLink to="/all-events" className={navStyle}>
-                <FaLayerGroup /> All Events
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/" className={navStyle}>
-                <FaHome /> Home Page
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/all-clubs" className={navStyle}>
-                <FaSearch /> Explore Clubs
-              </NavLink>
-            </li>
-          </ul>
 
-          {/* User Status Card (Nice extra touch) */}
-          <div className="mt-auto p-4 bg-slate-100 rounded-2xl border border-slate-200">
-            <p className="text-xs text-slate-500 text-center">Connected as</p>
-            <p className="text-sm font-bold text-slate-800 text-center truncate">
+              {/* Admin Links */}
+              {/* Admin Links */}
+              {role === "admin" && (
+                <>
+                  <li className="w-full">
+                    <NavLink
+                      to="/dashboard/admin-overview"
+                      className={navStyle}
+                    >
+                      <FaLayerGroup className="shrink-0" />
+                      <span className="truncate">Admin Overview</span>
+                    </NavLink>
+                  </li>
+
+                  <li className="w-full">
+                    <NavLink
+                      to="/dashboard/users-management"
+                      className={navStyle}
+                    >
+                      <FaUsers className="shrink-0" />
+                      <span className="truncate">Users Management</span>
+                    </NavLink>
+                  </li>
+
+                  <li className="w-full">
+                    <NavLink
+                      to="/dashboard/club-manager-approvals"
+                      className={navStyle}
+                    >
+                      <FaUserCheck className="shrink-0" />
+                      <span className="truncate">Manager Approvals</span>
+                    </NavLink>
+                  </li>
+
+                  <li className="w-full">
+                    <NavLink to="/dashboard/manage-clubs" className={navStyle}>
+                      <FaHome className="shrink-0" />
+                      <span className="truncate">Manage Clubs</span>
+                    </NavLink>
+                  </li>
+
+                  <li className="w-full">
+                    <NavLink to="/dashboard/payment" className={navStyle}>
+                      <FaHistory className="shrink-0" />
+                      <span className="truncate">Transactions</span>
+                    </NavLink>
+                  </li>
+                </>
+              )}
+
+              {/* Club Manager Links */}
+              {role === "clubManager" && (
+                <>
+                  <li className="w-full">
+                    <NavLink
+                      to="/dashboard/manager-overview"
+                      className={navStyle}
+                    >
+                      <FaLayerGroup className="shrink-0" />
+                      <span className="truncate">Overview</span>
+                    </NavLink>
+                  </li>
+
+                  <li className="w-full">
+                    <NavLink to="/dashboard/my-clubs" className={navStyle}>
+                      <HiUserGroup className="shrink-0" />
+                      <span className="truncate">My Clubs</span>
+                    </NavLink>
+                  </li>
+
+                  <li className="w-full">
+                    <NavLink to="/dashboard/create-a-club" className={navStyle}>
+                      <FaPlusCircle className="shrink-0" />
+                      <span className="truncate">Create A Club</span>
+                    </NavLink>
+                  </li>
+                </>
+              )}
+
+              {/* Member Links */}
+              {role === "member" && (
+                <>
+                  <li className="w-full">
+                    <NavLink to="/dashboard/member" className={navStyle}>
+                      <FaLayerGroup className="shrink-0" />
+                      <span className="truncate">Overview</span>
+                    </NavLink>
+                  </li>
+
+                  <li className="w-full">
+                    <NavLink
+                      to="/dashboard/my-joined-clubs"
+                      className={navStyle}
+                    >
+                      <FaHome className="shrink-0" />
+                      <span className="truncate">Joined Clubs</span>
+                    </NavLink>
+                  </li>
+
+                  <li className="w-full">
+                    <NavLink
+                      to="/dashboard/member-joined-events"
+                      className={navStyle}
+                    >
+                      <FaCalendarAlt className="shrink-0" />
+                      <span className="truncate">My Events</span>
+                    </NavLink>
+                  </li>
+
+                  <li className="w-full">
+                    <NavLink to="/dashboard/be-a-creator" className={navStyle}>
+                      <FaPlusCircle className="shrink-0" />
+                      <span className="truncate">Become Manager</span>
+                    </NavLink>
+                  </li>
+                </>
+              )}
+
+              {/* Portal Links */}
+              <div className="pb-2 pt-6">
+                <p className="ml-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                  Portal
+                </p>
+              </div>
+
+              {/* Only members can see All Events and Explore Clubs */}
+              {role === "member" && (
+                <>
+                  <li className="w-full">
+                    <NavLink to="/all-events" className={navStyle}>
+                      <FaCalendarAlt className="shrink-0" />
+                      <span className="truncate">All Events</span>
+                    </NavLink>
+                  </li>
+
+                  <li className="w-full">
+                    <NavLink to="/all-clubs" className={navStyle}>
+                      <FaSearch className="shrink-0" />
+                      <span className="truncate">Explore Clubs</span>
+                    </NavLink>
+                  </li>
+                </>
+              )}
+
+              {/* Everyone can see Home Page */}
+              <li className="w-full">
+                <NavLink to="/" className={navStyle}>
+                  <FaHome className="shrink-0" />
+                  <span className="truncate">Home Page</span>
+                </NavLink>
+              </li>
+            </ul>
+          </nav>
+
+          {/* User Status Card */}
+          <div className="mt-4 shrink-0 rounded-2xl border border-slate-200 bg-slate-100 p-4">
+            <p className="text-center text-xs text-slate-500">Connected as</p>
+            <p className="truncate text-center text-sm font-bold text-slate-800">
               {role}
             </p>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );

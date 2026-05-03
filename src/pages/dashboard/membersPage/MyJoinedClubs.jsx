@@ -62,7 +62,7 @@ const MyJoinedClubs = () => {
       {myClubs.length === 0 ? (
         <div className="bg-base-100 p-10 rounded-xl shadow text-center">
           <p className="text-gray-500">You haven't joined any clubs yet.</p>
-          <Link to="/clubs" className="btn btn-primary mt-4">
+          <Link to="/all-clubs" className="btn btn-primary mt-4">
             Explore Clubs
           </Link>
         </div>

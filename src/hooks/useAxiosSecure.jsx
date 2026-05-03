@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import useAuth from "./useAuth";
 
 const axiosSecure = axios.create({
@@ -7,33 +7,45 @@ const axiosSecure = axios.create({
 });
 
 const useAxiosSecure = () => {
-  const { user } = useAuth();
+  const { user, logOut } = useAuth();
+
   useEffect(() => {
     const requestInterceptor = axiosSecure.interceptors.request.use(
-      (config) => {
-        // Add any secure headers or authentication logic here
-        config.headers.Authorization = `Bearer ${user?.accessToken}`;
+      async (config) => {
+        if (user) {
+          const token = await user.getIdToken();
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+
         return config;
       },
+      (error) => {
+        return Promise.reject(error);
+      },
     );
-    // intercept the response to handle errors or refresh tokens if needed
+
     const responseInterceptor = axiosSecure.interceptors.response.use(
       (response) => {
         return response;
       },
-      (error) => {
-        if (error.response && error.response.status === 401) {
-          // Handle unauthorized errors, e.g., redirect to login or refresh token
-          console.error("Unauthorized! Please log in again.");
-          return Promise.reject(error);
+      async (error) => {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          console.error("Unauthorized or forbidden request");
+
+          // Optional logout. Keep it if you want auto logout on invalid token.
+          // await logOut();
         }
+
+        return Promise.reject(error);
       },
     );
+
     return () => {
       axiosSecure.interceptors.request.eject(requestInterceptor);
       axiosSecure.interceptors.response.eject(responseInterceptor);
     };
-  }, [user]);
+  }, [user, logOut]);
+
   return axiosSecure;
 };
 

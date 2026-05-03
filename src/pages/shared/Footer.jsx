@@ -1,51 +1,176 @@
 import React from "react";
-import Logo from "../../components/Logo";
 import { Link } from "react-router";
+import {
+  FaGithub,
+  FaLinkedin,
+  FaXTwitter,
+  FaEnvelope,
+  FaLocationDot,
+  FaPhone,
+  FaArrowRight,
+} from "react-icons/fa6";
 
 const Footer = () => {
   return (
-    <footer className="footer sm:footer-horizontal bg-neutral text-neutral-content items-center p-4">
-      <aside className="grid-flow-col items-center">
-        <span to="/">
-          <Logo />
-        </span>
-        <p>Copyright © {new Date().getFullYear()} - All right reserved</p>
-      </aside>
-      <nav className="grid-flow-col gap-4 md:place-self-center md:justify-self-end">
-        <a>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            className="fill-current"
-          >
-            <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path>
-          </svg>
-        </a>
-        <a>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            className="fill-current"
-          >
-            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path>
-          </svg>
-        </a>
-        <a>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            className="fill-current"
-          >
-            <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"></path>
-          </svg>
-        </a>
-      </nav>
+    <footer className="relative overflow-hidden bg-slate-950 text-white">
+      <div className="absolute -top-20 -left-20 h-56 w-56 rounded-full bg-primary/20 blur-3xl"></div>
+      <div className="absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-secondary/20 blur-3xl"></div>
+
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-8 pt-7 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.2fr_0.75fr_1.15fr_0.9fr] gap-8 lg:gap-10 items-start">
+          {/* Brand */}
+          <div className="max-w-sm">
+            <h2 className="text-xl font-black mb-2">
+              ClubSphere<span className="text-primary">.</span>
+            </h2>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              ClubSphere helps people discover local clubs, join communities,
+              and register for events. Club managers can organize clubs,
+              members, and event registrations easily.
+            </p>
+
+            <div className="flex items-center gap-2 mt-4">
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-circle btn-xs bg-white/10 border-white/10 text-white hover:bg-primary hover:border-primary"
+                aria-label="GitHub"
+              >
+                <FaGithub />
+              </a>
+
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-circle btn-xs bg-white/10 border-white/10 text-white hover:bg-primary hover:border-primary"
+                aria-label="LinkedIn"
+              >
+                <FaLinkedin />
+              </a>
+
+              <a
+                href="https://x.com"
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-circle btn-xs bg-white/10 border-white/10 text-white hover:bg-primary hover:border-primary"
+                aria-label="X"
+              >
+                <FaXTwitter />
+              </a>
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div className="lg:justify-self-center">
+            <h3 className="text-base font-black mb-3">Quick Links</h3>
+
+            <ul className="space-y-2 text-xs text-slate-300">
+              {[
+                ["Home", "/"],
+                ["Explore Clubs", "/all-clubs"],
+                ["All Events", "/all-events"],
+                ["Login", "/login"],
+                ["Register", "/signup"],
+              ].map(([label, path]) => (
+                <li key={label}>
+                  <Link
+                    to={path}
+                    className="inline-flex items-center gap-2 hover:text-primary transition-colors"
+                  >
+                    <FaArrowRight className="text-[10px]" />
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* For Users */}
+          <div>
+            <h3 className="text-base font-black mb-3">ClubSphere For</h3>
+
+            <ul className="space-y-2 text-xs text-slate-300">
+              <li className="rounded-xl bg-white/5 border border-white/10 px-3 py-2">
+                <p className="font-bold text-white">Members</p>
+                <p className="text-[11px] text-slate-400">
+                  Join clubs and register for events.
+                </p>
+              </li>
+
+              <li className="rounded-xl bg-white/5 border border-white/10 px-3 py-2">
+                <p className="font-bold text-white">Club Managers</p>
+                <p className="text-[11px] text-slate-400">
+                  Manage clubs, members, and events.
+                </p>
+              </li>
+
+              {/* <li className="rounded-xl bg-white/5 border border-white/10 px-3 py-2">
+                <p className="font-bold text-white">Admins</p>
+                <p className="text-[11px] text-slate-400">
+                  Approve clubs and monitor platform.
+                </p>
+              </li> */}
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div className="lg:justify-self-end">
+            <h3 className="text-base font-black mb-3">Contact</h3>
+
+            <ul className="space-y-3 text-xs text-slate-300">
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1 text-primary">
+                  <FaEnvelope />
+                </span>
+                <div>
+                  <p className="font-semibold text-white">Email</p>
+                  <p>support@clubsphere.com</p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1 text-primary">
+                  <FaPhone />
+                </span>
+                <div>
+                  <p className="font-semibold text-white">Phone</p>
+                  <p>+880 1234-567890</p>
+                </div>
+              </li>
+
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1 text-primary">
+                  <FaLocationDot />
+                </span>
+                <div>
+                  <p className="font-semibold text-white">Location</p>
+                  <p>Dhaka, Bangladesh</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom */}
+        <div className="mt-7 pt-4 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-2">
+          <p className="text-[11px] text-slate-400 text-center md:text-left">
+            © {new Date().getFullYear()} ClubSphere. All rights reserved.
+          </p>
+
+          <div className="flex items-center gap-3 text-[11px] text-slate-400">
+            <Link to="/" className="hover:text-primary transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="h-1 w-1 rounded-full bg-slate-600"></span>
+            <Link to="/" className="hover:text-primary transition-colors">
+              Terms & Conditions
+            </Link>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 };

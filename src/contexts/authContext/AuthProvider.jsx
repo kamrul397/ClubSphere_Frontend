@@ -36,10 +36,12 @@ const AuthProvider = ({ children }) => {
     return signOut(auth);
   };
 
-  const updateUserProfile = (profile) => {
-    return updateProfile(auth.currentUser, profile);
-  };
+  const updateUserProfile = async (profile) => {
+    await updateProfile(auth.currentUser, profile);
 
+    // Force React state refresh after Firebase profile update
+    setUser({ ...auth.currentUser });
+  };
   //   observe user state change
   useEffect(() => {
     const unSubscribe = onAuthStateChanged(auth, (currentUser) => {

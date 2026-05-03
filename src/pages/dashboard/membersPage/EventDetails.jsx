@@ -1,246 +1,205 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import useAxiosSecure from "../../../hooks/useAxiosSecure";
-import useEventStore from "../../../store/useEventStore";
-import useAuth from "../../../hooks/useAuth";
+import React from "react";
+import { Link, useParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Swal from "sweetalert2";
-import {
-  FaCalendarAlt,
-  FaMapMarkerAlt,
-  FaUsers,
-  FaDollarSign,
-  FaClock,
-  FaCheckCircle,
-} from "react-icons/fa";
-import { motion } from "framer-motion";
+
+import useAuth from "../../../hooks/useAuth";
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const EventDetails = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const axiosSecure = useAxiosSecure();
-  const selectedEvent = useEventStore((state) => state.selectedEvent);
+  const queryClient = useQueryClient();
 
-  // 1. Fetch Event Details
-  const { data: event, isLoading: isEventLoading } = useQuery({
-    queryKey: ["event", id],
+  // 1. Get event details
+  const { data: event = {}, isLoading: eventLoading } = useQuery({
+    queryKey: ["eventDetails", id],
     queryFn: async () => {
       const res = await axiosSecure.get(`/events/${id}`);
       return res.data;
     },
-    enabled: !selectedEvent && !!id,
+    enabled: !!id,
   });
 
-  // 2. Check if user is already registered
-  const { data: registrationRecord, isLoading: isRegLoading } = useQuery({
-    queryKey: ["checkRegistration", id, user?.email],
+  // 2. Get club details using event.clubId
+  const { data: club = {}, isLoading: clubLoading } = useQuery({
+    queryKey: ["eventClub", event?.clubId],
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/clubs/${event.clubId}`);
+      return res.data;
+    },
+    enabled: !!event?.clubId,
+  });
+
+  // 3. Check if user is a member of this event's club
+  const { data: membershipData = {}, isLoading: membershipLoading } = useQuery({
+    queryKey: ["membership-check", user?.email, event?.clubId],
     queryFn: async () => {
       const res = await axiosSecure.get(
-        `/event-registrations/check?email=${user?.email}&eventId=${id}`,
+        `/membership-check?email=${user.email}&clubId=${event.clubId}`,
       );
       return res.data;
     },
-    enabled: !!user?.email && !!id,
+    enabled: !!user?.email && !!event?.clubId,
   });
 
-  const finalEvent = selectedEvent || event;
-  const isAlreadyJoined = !!registrationRecord;
+  // 4. Check if user already registered for this event
+  const { data: registeredEvent = null, isLoading: registerCheckLoading } =
+    useQuery({
+      queryKey: ["event-registration-check", user?.email, id],
+      queryFn: async () => {
+        const res = await axiosSecure.get(
+          `/event-registrations/check?email=${user.email}&eventId=${id}`,
+        );
+        return res.data;
+      },
+      enabled: !!user?.email && !!id,
+    });
 
-  // --- Mutation for Free Registration ---
-  const { mutateAsync: registerFree } = useMutation({
-    mutationFn: async (registrationData) => {
+  const registerMutation = useMutation({
+    mutationFn: async () => {
+      const registrationInfo = {
+        eventId: event._id,
+        eventTitle: event.title,
+        clubId: event.clubId,
+        clubName: club.clubName || event.clubName || "Unknown Club",
+        userEmail: user.email,
+        userName: user.displayName || "Unknown User",
+        status: "registered",
+        registeredAt: new Date().toISOString(),
+      };
+
       const res = await axiosSecure.post(
         "/event-registrations",
-        registrationData,
+        registrationInfo,
       );
+
       return res.data;
     },
     onSuccess: () => {
-      Swal.fire({
-        title: "Registered!",
-        text: "You have successfully joined this event.",
-        icon: "success",
-        confirmButtonColor: "#3085d6",
+      queryClient.invalidateQueries({
+        queryKey: ["event-registration-check", user?.email, id],
       });
-      navigate("/dashboard/my-events");
+
+      Swal.fire("Success!", "You registered for this event.", "success");
     },
     onError: (error) => {
       Swal.fire(
         "Error",
-        error.response?.data?.message || "Registration failed",
+        error?.response?.data?.message || "Could not register for this event.",
         "error",
       );
     },
   });
 
-  const handleFreeJoin = async () => {
-    if (!user)
-      return Swal.fire(
-        "Please Login",
-        "You must be logged in to join events",
-        "warning",
-      );
-
-    const registrationInfo = {
-      eventId: finalEvent._id,
-      userEmail: user.email,
-      userName: user.displayName,
-      clubId: finalEvent.clubId,
-      status: "registered",
-      registeredAt: new Date(),
-    };
-
-    await registerFree(registrationInfo);
+  const handleRegisterEvent = () => {
+    registerMutation.mutate();
   };
 
-  if ((isEventLoading || isRegLoading) && !finalEvent) {
+  if (
+    eventLoading ||
+    clubLoading ||
+    membershipLoading ||
+    registerCheckLoading
+  ) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <span className="loading loading-ring loading-lg text-primary"></span>
+      <div className="p-10 text-center">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
       </div>
     );
   }
 
-  // If even after loading there's no event, show error
-  if (!finalEvent) {
-    return <div className="text-center py-20 text-error">Event not found.</div>;
-  }
+  const isMember = membershipData?.isMember;
+  const isAlreadyRegistered = !!registeredEvent;
 
   return (
-    <div className="min-h-screen bg-base-200 py-10 px-4 md:px-10">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-6xl mx-auto bg-base-100 rounded-3xl shadow-2xl overflow-hidden border border-base-300"
-      >
-        {/* Header Hero Section */}
-        <div className="bg-primary p-8 md:p-12 text-primary-content relative overflow-hidden">
-          <div className="relative z-10">
-            <span className="badge badge-secondary mb-4 uppercase tracking-widest font-bold">
-              Upcoming Event
-            </span>
-            <h1 className="text-4xl md:text-6xl font-black mb-4">
-              {finalEvent?.title}
-            </h1>
-            <div className="flex flex-wrap gap-6 text-lg opacity-90">
-              <span className="flex items-center gap-2">
-                <FaCalendarAlt />{" "}
-                {new Date(finalEvent?.eventDate).toLocaleDateString()}
-              </span>
-              <span className="flex items-center gap-2">
-                <FaClock />{" "}
-                {new Date(finalEvent?.eventDate).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-              <span className="flex items-center gap-2">
-                <FaMapMarkerAlt /> {finalEvent?.location}
-              </span>
-            </div>
-          </div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
-        </div>
+    <div className="p-4 md:p-8 bg-base-100 min-h-screen">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-base-200 p-6 md:p-8">
+        <h2 className="text-3xl font-extrabold text-base-content mb-3">
+          {event.title}
+        </h2>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:divide-x divide-base-300">
-          {/* Main Content Area */}
-          <div className="lg:col-span-2 p-8 md:p-12">
-            <section className="mb-10">
-              <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <FaUsers className="text-primary" /> About this Event
-              </h3>
-              <p className="text-lg leading-relaxed text-base-content/80">
-                {finalEvent?.description ||
-                  "Join us for this exciting community gathering."}
+        <p className="text-base-content/70 mb-6">{event.description}</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="p-4 rounded-xl bg-base-200">
+            <p className="text-xs uppercase opacity-60">Location</p>
+            <p className="font-semibold">{event.location || "N/A"}</p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-base-200">
+            <p className="text-xs uppercase opacity-60">Date</p>
+            <p className="font-semibold">
+              {event.eventDate
+                ? new Date(event.eventDate).toLocaleDateString()
+                : "N/A"}
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-base-200">
+            <p className="text-xs uppercase opacity-60">Fee</p>
+            <p className="font-semibold">
+              {event.isPaid ? `$${event.eventFee || 0}` : "Free"}
+            </p>
+          </div>
+
+          <Link
+            to={`/club-details/${event.clubId}`}
+            className="group relative block overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary via-secondary to-accent p-[1px] shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+          >
+            <div className="relative h-full rounded-2xl bg-base-100/90 p-4 backdrop-blur-sm transition-all duration-300 group-hover:bg-base-100/20">
+              <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-primary/30 blur-2xl transition-all duration-300 group-hover:bg-white/30"></div>
+
+              <p className="relative text-xs font-extrabold uppercase tracking-[0.25em] text-primary group-hover:text-white/80">
+                Club
               </p>
-            </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="card bg-base-200 p-6 rounded-2xl">
-                <h4 className="font-bold text-sm text-base-content/50 uppercase mb-2">
-                  Maximum Capacity
-                </h4>
-                <p className="text-xl font-bold">
-                  {finalEvent?.maxAttendees
-                    ? `${finalEvent.maxAttendees} People`
-                    : "Unlimited Space"}
-                </p>
-              </div>
-              <div className="card bg-base-200 p-6 rounded-2xl">
-                <h4 className="font-bold text-sm text-base-content/50 uppercase mb-2">
-                  Pricing Type
-                </h4>
-                <p className="text-xl font-bold">
-                  {finalEvent?.isPaid ? "Paid Entry" : "Free Entry"}
-                </p>
-              </div>
+              <p className="relative mt-2 text-lg font-black text-base-content group-hover:text-white">
+                {club.clubName || event.clubName || "View Club Details"}
+              </p>
+
+              <p className="relative mt-1 text-xs font-medium text-base-content/60 group-hover:text-white/75">
+                Tap to explore this club
+              </p>
             </div>
-          </div>
-
-          {/* Registration Sidebar */}
-          <div className="p-8 md:p-12 bg-base-50 flex flex-col justify-between">
-            <div>
-              <div className="mb-8">
-                <h4 className="text-sm font-bold text-base-content/50 uppercase mb-4 tracking-tighter">
-                  Registration Fee
-                </h4>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-black text-primary">
-                    {finalEvent?.isPaid ? `$${finalEvent.eventFee}` : "FREE"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {isAlreadyJoined ? (
-                <div className="bg-info/10 p-4 rounded-2xl border border-info/20 text-center">
-                  <div className="flex items-center justify-center gap-2 text-info font-bold mb-2">
-                    <FaCheckCircle /> You have already joined!
-                  </div>
-                  <p className="text-sm opacity-70 mb-4">
-                    Manage your events in the dashboard.
-                  </p>
-                  <Link
-                    to="/dashboard/member-joined-events"
-                    className="btn btn-info btn-outline btn-block rounded-2xl"
-                  >
-                    Manage My Events
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  {finalEvent?.isPaid ? (
-                    <Link
-                      to={`/dashboard/payment`}
-                      state={{
-                        amount: finalEvent.eventFee,
-                        eventId: finalEvent._id,
-                        clubId: finalEvent.clubId,
-                        type: "event",
-                      }}
-                      className="btn btn-primary btn-lg w-full rounded-2xl text-lg font-bold shadow-xl"
-                    >
-                      <FaDollarSign /> Join Event Now
-                    </Link>
-                  ) : (
-                    <button
-                      className="btn btn-success btn-lg w-full rounded-2xl text-lg font-bold text-white shadow-xl hover:scale-[1.02] transition-transform"
-                      onClick={handleFreeJoin}
-                    >
-                      Register for Free
-                    </button>
-                  )}
-                </>
-              )}
-
-              <Link to="/all-events" className="btn btn-ghost btn-block">
-                Back to Events
-              </Link>
-            </div>
-          </div>
+          </Link>
         </div>
-      </motion.div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          {!isMember && (
+            <Link
+              to={`/club-details/${event.clubId}`}
+              className="btn btn-warning"
+            >
+              Join Club First
+            </Link>
+          )}
+
+          {isMember && !isAlreadyRegistered && (
+            <button
+              onClick={handleRegisterEvent}
+              disabled={registerMutation.isPending}
+              className="btn btn-primary"
+            >
+              {registerMutation.isPending ? "Registering..." : "Register Event"}
+            </button>
+          )}
+
+          {isMember && isAlreadyRegistered && (
+            <Link
+              to="/dashboard/member-joined-events"
+              className="btn btn-success"
+            >
+              Already Joined - Go to My Events
+            </Link>
+          )}
+
+          <Link to="/all-events" className="btn btn-outline">
+            Back to All Events
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };
