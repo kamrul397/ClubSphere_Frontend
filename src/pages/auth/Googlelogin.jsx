@@ -1,44 +1,80 @@
-import React from "react";
+import React, { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
-import useAuth from "../../hooks/useAuth";
 import { useLocation, useNavigate } from "react-router";
-import useAxiosSecure from "../../hooks/useAxiosSecure";
+import Swal from "sweetalert2";
+
+import useAuth from "../../hooks/useAuth";
+import useAxiosPublic from "../../hooks/useAxiosPublic";
 
 const Googlelogin = () => {
   const { googleSignIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const axiosSecure = useAxiosSecure();
+  const axiosPublic = useAxiosPublic();
 
-  const handleGoogleSignIn = () => {
-    googleSignIn()
-      .then(async (result) => {
-        const user = result.user;
-        const userInfo = {
-          name: user.displayName,
-          email: user.email,
-          photoURL: user.photoURL,
-          lastLogin: new Date(),
-        };
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-        // Ensure user exists in DB
-        await axiosSecure.post("/users", userInfo);
-        navigate(location.state || "/");
-      })
-      .catch((error) => console.error(error));
+  const redirectPath = location.state?.from?.pathname || location.state || "/";
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+
+      const result = await googleSignIn();
+      const user = result.user;
+
+      const userInfo = {
+        name: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL || "",
+        lastLogin: new Date(),
+      };
+
+      await axiosPublic.post("/users", userInfo);
+
+      Swal.fire({
+        icon: "success",
+        title: "Welcome!",
+        text: "You have signed in successfully.",
+        timer: 1300,
+        showConfirmButton: false,
+      });
+
+      navigate(redirectPath, { replace: true });
+    } catch (error) {
+      console.error(error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Google Sign In Failed",
+        text:
+          error?.response?.data?.message ||
+          "Could not continue with Google. Please try again.",
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
-    <div>
-      {/* Social Login */}
-      <button
-        className="btn btn-outline btn-neutral w-full flex items-center gap-3 hover:bg-gray-50"
-        onClick={handleGoogleSignIn}
-      >
-        <FcGoogle className="text-2xl" />
-        Continue with Google
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={handleGoogleSignIn}
+      disabled={googleLoading}
+      className="btn w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+    >
+      {googleLoading ? (
+        <>
+          <span className="loading loading-spinner loading-sm"></span>
+          Connecting...
+        </>
+      ) : (
+        <>
+          <FcGoogle size={22} />
+          Continue with Google
+        </>
+      )}
+    </button>
   );
 };
 

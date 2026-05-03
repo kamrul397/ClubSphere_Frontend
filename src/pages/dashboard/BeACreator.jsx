@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import {
   FaArrowRight,
@@ -42,6 +43,21 @@ const BeACreator = () => {
     },
   });
 
+  const {
+    data: applicationCheck = {},
+    isLoading: applicationLoading,
+    refetch: refetchApplication,
+  } = useQuery({
+    queryKey: ["myManagerApplication", user?.email],
+    queryFn: async () => {
+      const res = await axiosSecure.get(
+        `/club-managers/my-application/${user.email}`,
+      );
+      return res.data;
+    },
+    enabled: !!user?.email && role === "member",
+  });
+
   useEffect(() => {
     if (user) {
       reset({
@@ -66,6 +82,7 @@ const BeACreator = () => {
     const applicationData = {
       name: data.name,
       email: data.email,
+      photoURL: user?.photoURL || "",
       nid: data.nid,
       address: data.address,
       roleRequested: "clubManager",
@@ -79,6 +96,7 @@ const BeACreator = () => {
       if (res.data.insertedId) {
         setApplicationSent(true);
         setSubmittedAt(new Date());
+        refetchApplication();
 
         Swal.fire({
           icon: "success",
@@ -103,8 +121,30 @@ const BeACreator = () => {
         error?.response?.data?.message || "Failed to submit application.",
         "error",
       );
+
+      refetchApplication();
     }
   };
+
+  const existingApplication = applicationCheck?.application;
+  const hasActiveApplication =
+    applicationSent || applicationCheck?.hasApplication;
+
+  const applicationStatus = existingApplication?.status || "pending";
+
+  const submittedDate = submittedAt
+    ? submittedAt.toLocaleDateString()
+    : existingApplication?.createdAt
+      ? new Date(existingApplication.createdAt).toLocaleDateString()
+      : "Just now";
+
+  if (!role || applicationLoading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-base-100">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
+    );
+  }
 
   if (role !== "member") {
     return (
@@ -148,7 +188,7 @@ const BeACreator = () => {
     );
   }
 
-  if (applicationSent) {
+  if (hasActiveApplication) {
     return (
       <div className="h-full min-h-0 overflow-hidden bg-base-100 flex flex-col">
         <div className="h-full flex items-center justify-center">
@@ -182,7 +222,11 @@ const BeACreator = () => {
                     <p className="text-xs font-bold uppercase tracking-widest opacity-60">
                       Status
                     </p>
-                    <p className="font-black text-warning">Pending Review</p>
+                    <p className="font-black text-warning capitalize">
+                      {applicationStatus === "approved"
+                        ? "Approved"
+                        : "Pending Review"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -197,11 +241,7 @@ const BeACreator = () => {
                     <p className="text-xs font-bold uppercase tracking-widest opacity-60">
                       Submitted
                     </p>
-                    <p className="font-black">
-                      {submittedAt
-                        ? submittedAt.toLocaleDateString()
-                        : "Just now"}
-                    </p>
+                    <p className="font-black">{submittedDate}</p>
                   </div>
                 </div>
               </div>

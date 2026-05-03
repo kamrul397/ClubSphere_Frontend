@@ -1,78 +1,149 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import useAxiosSecure from "../../hooks/useAxiosSecure";
 import Swal from "sweetalert2";
-import { FaTrashAlt, FaUserShield, FaUsers, FaUserTag } from "react-icons/fa";
-import axios from "axios";
+import {
+  FaUserShield,
+  FaUsers,
+  FaUserTag,
+  FaUserMinus,
+  FaSearch,
+} from "react-icons/fa";
+
+import useAxiosSecure from "../../hooks/useAxiosSecure";
+import useAuth from "../../hooks/useAuth";
 
 const UsersManagement = () => {
   const axiosSecure = useAxiosSecure();
-  const [searchText, setSearchText] = useState("");
+  const { user: currentUser } = useAuth();
 
-  const { data: users = [], refetch } = useQuery({
-    // Adding searchText to queryKey is correct—it triggers a refetch automatically
-    queryKey: ["users", searchText],
+  const [searchText, setSearchText] = useState("");
+  const [debouncedSearchText, setDebouncedSearchText] = useState("");
+
+  // Debounce search so API does not call on every single key press immediately
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchText(searchText.trim());
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
+  const {
+    data: users = [],
+    refetch,
+    isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: ["users", debouncedSearchText],
     queryFn: async () => {
-      // Only fetch if searchText is actually used or clear it
-      const res = await axiosSecure.get(`/users?searchText=${searchText}`);
+      const res = await axiosSecure.get(
+        `/users?searchText=${encodeURIComponent(debouncedSearchText)}`,
+      );
       return res.data;
     },
   });
 
-  const handleMakeUser = (user) => {
-    const roleInfo = {
-      role: "admin",
-      email: user.email,
-    };
+  const handleMakeAdmin = async (selectedUser) => {
+    if (selectedUser.email === currentUser?.email) {
+      Swal.fire("Not Allowed", "You cannot change your own role.", "warning");
+      return;
+    }
 
-    // 1. Removed semicolon after axiosSecure.patch
-    axiosSecure
-      .patch(`/users/${user._id}/role`, roleInfo)
-      .then((res) => {
-        // 2. Added arrow '=>'
-        if (res.data.modifiedCount > 0) {
-          Swal.fire({
-            position: "top-end",
-            icon: "success",
-            title: `${user.name} is now an Admin`,
-            showConfirmButton: false,
-            timer: 1500, // Added timer so it closes automatically
-          });
-          // 3. Move refetch inside the if block for efficiency
-          refetch();
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        Swal.fire("Error", "Failed to update user role", "error");
-      });
+    const confirm = await Swal.fire({
+      title: "Promote to Admin?",
+      text: `${selectedUser.name || selectedUser.email} will become an admin.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#6366f1",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, make admin",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const roleInfo = {
+        role: "admin",
+        email: selectedUser.email,
+      };
+
+      const res = await axiosSecure.patch(
+        `/users/${selectedUser._id}/role`,
+        roleInfo,
+      );
+
+      if (res.data.modifiedCount > 0) {
+        Swal.fire({
+          position: "top-end",
+          icon: "success",
+          title: `${selectedUser.name || "User"} is now an Admin`,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+
+        refetch();
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error", "Failed to update user role.", "error");
+    }
   };
 
-  const handleDeleteUser = (user) => {
-    const roleInfo = {
-      role: "member",
-      email: user.email,
-    };
-    axiosSecure
-      .patch(`/users/${user._id}/role`, roleInfo)
-      .then((res) => {
-        if (res.data.modifiedCount > 0) {
-          Swal.fire({
-            position: "top-end",
-            icon: "success",
-            title: `${user.name} is removed from Admin`,
-            showConfirmButton: false,
-            timer: 1500,
-          });
-          refetch();
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        Swal.fire("Error", "Failed to update user role", "error");
-      });
+  const handleDemoteToMember = async (selectedUser) => {
+    if (selectedUser.email === currentUser?.email) {
+      Swal.fire(
+        "Not Allowed",
+        "You cannot demote your own account.",
+        "warning",
+      );
+      return;
+    }
+
+    if (selectedUser.role === "member") {
+      Swal.fire("Already Member", "This user is already a member.", "info");
+      return;
+    }
+
+    const confirm = await Swal.fire({
+      title: "Demote to Member?",
+      text: `${selectedUser.name || selectedUser.email} will be changed to member role.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#f59e0b",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, demote",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const roleInfo = {
+        role: "member",
+        email: selectedUser.email,
+      };
+
+      const res = await axiosSecure.patch(
+        `/users/${selectedUser._id}/role`,
+        roleInfo,
+      );
+
+      if (res.data.modifiedCount > 0) {
+        Swal.fire({
+          position: "top-end",
+          icon: "success",
+          title: `${selectedUser.name || "User"} is now a Member`,
+          showConfirmButton: false,
+          timer: 1500,
+        });
+
+        refetch();
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire("Error", "Failed to demote user.", "error");
+    }
   };
-  // --- Design Helper: Badge colors based on role ---
+
   const getRoleBadge = (role) => {
     switch (role) {
       case "admin":
@@ -85,150 +156,222 @@ const UsersManagement = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      {/* Header Section */}
-      <div className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-extrabold text-gray-800 flex items-center gap-3">
-            <FaUsers className="text-primary" />
-            User Management
-          </h2>
-          <p className="text-gray-500 mt-1">
-            Review, promote, or manage all platform members.
-          </p>
-        </div>
-        {/* search */}
-        <label className="input">
-          <svg
-            className="h-[1em] opacity-50"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-          >
-            <g
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              strokeWidth="2.5"
-              fill="none"
-              stroke="currentColor"
-            >
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.3-4.3"></path>
-            </g>
-          </svg>
-          <input
-            type="search"
-            required
-            placeholder="Search users..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-          />
-        </label>
+    <div className="h-full min-h-0 overflow-hidden bg-base-100 flex flex-col">
+      {/* Header */}
+      <div className="shrink-0 mb-4">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#17203a] to-[#3a2348] p-[1px] shadow-xl">
+          <div className="relative rounded-3xl bg-slate-900/90 p-5 md:p-6 text-white">
+            <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-primary/25 blur-3xl"></div>
+            <div className="absolute -left-16 bottom-0 h-40 w-40 rounded-full bg-secondary/20 blur-3xl"></div>
 
-        <div className="stats shadow bg-white border border-gray-100">
-          <div className="stat">
-            <div className="stat-figure text-primary">
-              <FaUserTag size={30} />
+            <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-primary">
+                  Admin Control
+                </p>
+
+                <h2 className="mt-2 text-3xl md:text-4xl font-black leading-tight flex items-center gap-3">
+                  <FaUsers />
+                  User Management
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-300">
+                  Review users, promote admins, and demote roles back to member.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                <label className="input input-bordered bg-white/10 border-white/20 text-white w-full sm:w-72">
+                  <FaSearch className="opacity-60" />
+
+                  <input
+                    type="search"
+                    placeholder="Search by name or email..."
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    className="placeholder:text-white/50"
+                  />
+
+                  {isFetching && !isLoading && (
+                    <span className="loading loading-spinner loading-xs text-white"></span>
+                  )}
+                </label>
+
+                <div className="rounded-2xl border border-white/10 bg-white/10 px-5 py-3">
+                  <div className="flex items-center gap-3">
+                    <FaUserTag className="text-2xl text-primary" />
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">
+                        Showing Users
+                      </p>
+                      <p className="text-2xl font-black text-white">
+                        {users.length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="stat-title">Total Users</div>
-            <div className="stat-value text-primary">{users.length}</div>
+
+            {searchText && (
+              <div className="relative mt-4 flex items-center justify-between rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
+                <p className="text-white/70">
+                  Searching for:{" "}
+                  <span className="font-bold text-white">{searchText}</span>
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setSearchText("")}
+                  className="btn btn-xs border-white/20 bg-white/10 text-white hover:bg-white hover:text-slate-900"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className="max-w-7xl mx-auto overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
+      {/* Table */}
+      <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-base-200 bg-base-100 shadow-xl">
+        <div className="h-full overflow-x-auto overflow-y-auto">
           <table className="table table-zebra w-full">
-            {/* Table Head */}
-            <thead className="bg-gray-100 text-gray-700">
-              <tr>
-                <th className="py-4">#</th>
+            <thead className="sticky top-0 z-10 bg-base-200 text-base-content/70">
+              <tr className="whitespace-nowrap">
+                <th>#</th>
                 <th>User Profile</th>
                 <th>Email Address</th>
                 <th>Current Role</th>
-                <th className="text-center">Quick Actions</th>
+                <th className="text-center w-[130px]">Role Actions</th>
               </tr>
             </thead>
 
-            {/* Table Body */}
             <tbody>
-              {users.map((user, index) => (
-                <tr
-                  key={user._id}
-                  className="hover:bg-blue-50/30 transition-colors"
-                >
-                  <th className="text-gray-400 font-medium">{index + 1}</th>
-                  <td>
-                    <div className="flex items-center gap-4">
-                      <div className="avatar">
-                        <div className="mask mask-squircle w-12 h-12 border-2 border-primary/10">
-                          <img
-                            src={
-                              user.photoURL ||
-                              "https://i.ibb.co/Mgs9hyL/user.png"
-                            }
-                            alt="avatar"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="font-bold text-gray-800">
-                          {user.name || "Anonymous"}
-                        </div>
-                        <div className="text-xs font-semibold text-primary uppercase tracking-wider">
-                          {user.role || "Member"}
-                        </div>
-                      </div>
-                    </div>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center">
+                    <span className="loading loading-spinner loading-lg text-primary"></span>
                   </td>
-                  <td className="text-gray-600 font-medium italic">
-                    {user.email}
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${getRoleBadge(user.role)} p-3 font-bold`}
-                    >
-                      {user.role === "clubManager"
-                        ? "Manager"
-                        : user.role || "Member"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="flex justify-center gap-3">
-                      {/* Action: Promote */}
-                      {user.role !== "admin" && (
-                        <button
-                          className="btn btn-sm btn-circle btn-outline btn-warning hover:text-white tooltip"
-                          data-tip="Promote to Admin"
-                          onClick={() => handleMakeUser(user)}
-                        >
-                          <FaUserShield size={16} />
-                        </button>
-                      )}
+                </tr>
+              ) : users.length > 0 ? (
+                users.map((selectedUser, index) => {
+                  const isSelf = selectedUser.email === currentUser?.email;
+                  const canPromoteToAdmin = selectedUser.role !== "admin";
+                  const canDemoteToMember = selectedUser.role !== "member";
 
-                      {/* Action: Delete */}
-                      <button
-                        className="btn btn-sm btn-circle btn-outline btn-error hover:text-white tooltip"
-                        data-tip="Delete User"
-                        onClick={() => handleDeleteUser(user)}
-                      >
-                        <FaTrashAlt size={16} />
-                      </button>
+                  return (
+                    <tr
+                      key={selectedUser._id}
+                      className="hover:bg-primary/5 transition-colors whitespace-nowrap"
+                    >
+                      <th className="text-base-content/40 font-medium">
+                        {index + 1}
+                      </th>
+
+                      <td>
+                        <div className="flex items-center gap-4">
+                          <div className="avatar">
+                            <div className="mask mask-squircle w-12 h-12 border-2 border-primary/10">
+                              <img
+                                src={
+                                  selectedUser.photoURL ||
+                                  "https://i.ibb.co/Mgs9hyL/user.png"
+                                }
+                                alt={selectedUser.name || "User"}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="font-black text-base-content truncate max-w-[180px]">
+                              {selectedUser.name || "Anonymous"}
+                            </div>
+
+                            <div className="text-xs font-semibold text-primary uppercase tracking-wider">
+                              {selectedUser.role || "member"}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="text-base-content/70 font-medium italic max-w-[260px] truncate">
+                        {selectedUser.email}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`badge ${getRoleBadge(
+                            selectedUser.role,
+                          )} p-3 font-bold capitalize`}
+                        >
+                          {selectedUser.role === "clubManager"
+                            ? "Club Manager"
+                            : selectedUser.role || "Member"}
+                        </span>
+                      </td>
+
+                      <td className="text-center align-middle">
+                        <div className="mx-auto grid w-[92px] grid-cols-2 place-items-center gap-2">
+                          {canPromoteToAdmin ? (
+                            <button
+                              type="button"
+                              disabled={isSelf}
+                              className="btn btn-sm btn-circle btn-outline btn-warning hover:text-white disabled:opacity-30"
+                              title={
+                                isSelf
+                                  ? "You cannot change your own role"
+                                  : "Promote to Admin"
+                              }
+                              onClick={() => handleMakeAdmin(selectedUser)}
+                            >
+                              <FaUserShield size={16} />
+                            </button>
+                          ) : (
+                            <span className="h-8 w-8"></span>
+                          )}
+
+                          {canDemoteToMember ? (
+                            <button
+                              type="button"
+                              disabled={isSelf}
+                              className="btn btn-sm btn-circle btn-outline btn-error hover:text-white disabled:opacity-30"
+                              title={
+                                isSelf
+                                  ? "You cannot demote yourself"
+                                  : "Demote to Member"
+                              }
+                              onClick={() => handleDemoteToMember(selectedUser)}
+                            >
+                              <FaUserMinus size={16} />
+                            </button>
+                          ) : (
+                            <span className="h-8 w-8"></span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={5}>
+                    <div className="text-center py-20">
+                      <div className="text-5xl mb-4 text-gray-200 font-bold">
+                        Empty
+                      </div>
+                      <p className="text-gray-400">
+                        {debouncedSearchText
+                          ? "No users matched your search."
+                          : "No users found in the database."}
+                      </p>
                     </div>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
-
-        {/* Empty State */}
-        {users.length === 0 && (
-          <div className="text-center py-20">
-            <div className="text-5xl mb-4 text-gray-200 font-bold">Empty</div>
-            <p className="text-gray-400">No users found in the database.</p>
-          </div>
-        )}
       </div>
     </div>
   );

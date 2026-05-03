@@ -10,14 +10,15 @@ import {
   FaSearch,
 } from "react-icons/fa";
 import { HiUserGroup } from "react-icons/hi";
-import { FaApper, FaUserCheck } from "react-icons/fa6";
+import { FaUserCheck } from "react-icons/fa6";
 import useRole from "../hooks/useRole";
+import Logo from "../components/Logo";
 
 const DashboardLayout = () => {
   const { role } = useRole();
 
   const navStyle = ({ isActive }) =>
-    `flex w-full min-w-0 items-center gap-3 rounded-lg px-4 py-2 font-medium transition-all duration-300 ${
+    `flex w-full min-w-0 items-center gap-3 rounded-xl px-4 py-2.5 font-medium transition-all duration-300 ${
       isActive
         ? "bg-primary text-white shadow-md"
         : "text-gray-600 hover:bg-base-200 hover:text-primary"
@@ -30,9 +31,12 @@ const DashboardLayout = () => {
       {/* Page Content */}
       <div className="drawer-content flex h-dvh min-h-0 flex-col overflow-hidden bg-slate-50">
         {/* Top Navbar for Mobile */}
-        <div className="navbar shrink-0 bg-white px-4 shadow-sm lg:hidden">
+        <div className="navbar shrink-0 border-b border-base-200 bg-white px-4 shadow-sm lg:hidden">
           <div className="flex-none">
-            <label htmlFor="my-drawer-2" className="btn btn-square btn-ghost">
+            <label
+              htmlFor="my-drawer-2"
+              className="btn btn-square btn-ghost rounded-xl"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -44,21 +48,15 @@ const DashboardLayout = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d="M4 6h16M4 12h8m-8 6h16"
+                  d="M4 6h16M4 12h16M4 18h16"
                 />
               </svg>
             </label>
           </div>
 
-          <Link
-            to="/"
-            className="flex flex-1 items-center gap-2 px-2 font-bold tracking-tighter text-primary"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
-              <FaLayerGroup />
-            </div>
-            CLUBSPHERE
-          </Link>
+          <div className="flex-1 pl-2">
+            <Logo compact />
+          </div>
         </div>
 
         {/* Main Dashboard Content */}
@@ -73,24 +71,16 @@ const DashboardLayout = () => {
       <div className="drawer-side z-50 h-dvh overflow-hidden">
         <label htmlFor="my-drawer-2" className="drawer-overlay"></label>
 
-        <aside className="flex h-dvh w-72 max-w-72 flex-col overflow-hidden border-r border-base-200 bg-white p-6 text-base-content">
-          {/* Clickable Logo Section */}
-          <Link
-            to="/"
-            className="mb-8 flex shrink-0 flex-col items-center rounded-2xl p-2 transition-all duration-300 hover:bg-base-200"
-          >
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-lg">
-              <FaLayerGroup className="text-2xl text-white" />
+        <aside className="flex h-dvh w-72 max-w-72 flex-col overflow-hidden border-r border-base-200 bg-white p-5 text-base-content">
+          {/* Logo Section */}
+          <div className="mb-6 shrink-0 rounded-2xl border border-base-200 bg-base-100 p-3">
+            <div className="flex flex-col items-center">
+              <Logo />
+              <span className="badge badge-sm badge-ghost mt-3 text-[10px] uppercase tracking-widest opacity-70">
+                {role || "user"} Mode
+              </span>
             </div>
-
-            <h1 className="text-xl font-bold tracking-tight text-gray-800">
-              ClubSphere <span className="text-primary">.</span>
-            </h1>
-
-            <span className="badge badge-sm badge-ghost mt-1 text-[9px] uppercase tracking-widest opacity-70">
-              {role || "user"} Mode
-            </span>
-          </Link>
+          </div>
 
           {/* Scrollable sidebar links */}
           <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-1">
@@ -99,7 +89,6 @@ const DashboardLayout = () => {
                 Main Menu
               </p>
 
-              {/* Admin Links */}
               {/* Admin Links */}
               {role === "admin" && (
                 <>
@@ -224,7 +213,6 @@ const DashboardLayout = () => {
                 </p>
               </div>
 
-              {/* Only members can see All Events and Explore Clubs */}
               {role === "member" && (
                 <>
                   <li className="w-full">
@@ -243,7 +231,6 @@ const DashboardLayout = () => {
                 </>
               )}
 
-              {/* Everyone can see Home Page */}
               <li className="w-full">
                 <NavLink to="/" className={navStyle}>
                   <FaHome className="shrink-0" />
@@ -256,8 +243,8 @@ const DashboardLayout = () => {
           {/* User Status Card */}
           <div className="mt-4 shrink-0 rounded-2xl border border-slate-200 bg-slate-100 p-4">
             <p className="text-center text-xs text-slate-500">Connected as</p>
-            <p className="truncate text-center text-sm font-bold text-slate-800">
-              {role}
+            <p className="truncate text-center text-sm font-bold capitalize text-slate-800">
+              {role || "user"}
             </p>
           </div>
         </aside>

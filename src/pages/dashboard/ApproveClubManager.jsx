@@ -8,9 +8,14 @@ import {
   FaEnvelope,
   FaIdCard,
   FaLocationDot,
-  FaTrashCan,
   FaUserXmark,
+  FaClock,
+  FaCircleCheck,
+  FaBan,
 } from "react-icons/fa6";
+
+const defaultAvatar =
+  "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
 
 const ApproveClubManager = () => {
   const axiosSecure = useAxiosSecure();
@@ -27,11 +32,21 @@ const ApproveClubManager = () => {
     },
   });
 
+  const getApplicantPhoto = (manager) => {
+    return (
+      manager.photoURL ||
+      manager.userPhoto ||
+      manager.photo ||
+      manager.image ||
+      defaultAvatar
+    );
+  };
+
   const updateApprovalStatus = async (manager, status) => {
     if (manager.status !== "pending") {
       Swal.fire(
         "Action Not Allowed",
-        "You can only approve or reject pending applications.",
+        "Only pending applications can be approved or rejected.",
         "warning",
       );
       return;
@@ -41,7 +56,7 @@ const ApproveClubManager = () => {
 
     const confirm = await Swal.fire({
       title: "Are you sure?",
-      text: `Do you want to ${actionText} ${manager.name}?`,
+      text: `Do you want to ${actionText} ${manager.name || manager.email}?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: status === "approved" ? "#22c55e" : "#f59e0b",
@@ -70,8 +85,8 @@ const ApproveClubManager = () => {
           icon: "success",
           title:
             status === "approved"
-              ? `${manager.name} is now a Club Manager`
-              : `${manager.name}'s request has been rejected`,
+              ? `${manager.name || "User"} is now a Club Manager`
+              : `${manager.name || "User"}'s request has been rejected`,
           showConfirmButton: false,
           timer: 1600,
         });
@@ -80,7 +95,12 @@ const ApproveClubManager = () => {
       }
     } catch (error) {
       console.error(error);
-      Swal.fire("Error", `Could not ${actionText} this request.`, "error");
+      Swal.fire(
+        "Error",
+        error?.response?.data?.message ||
+          `Could not ${actionText} this request.`,
+        "error",
+      );
     }
   };
 
@@ -93,11 +113,34 @@ const ApproveClubManager = () => {
   };
 
   const handleView = (manager) => {
+    const photo = getApplicantPhoto(manager);
+
     Swal.fire({
       title: manager.name || "Manager Application",
-      width: 650,
+      width: 680,
       html: `
         <div style="text-align:left">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;padding:14px;border:1px solid #e2e8f0;border-radius:18px;background:#f8fafc">
+            <img
+              src="${photo}"
+              alt="${manager.name || "Applicant"}"
+              style="width:64px;height:64px;border-radius:18px;object-fit:cover;border:2px solid #6366f1"
+            />
+            <div>
+              <p style="margin:0;font-weight:800;font-size:18px;color:#0f172a">
+                ${manager.name || "Unknown User"}
+              </p>
+              <p style="margin:4px 0 0;color:#64748b;font-size:13px">
+                ${manager.email || "N/A"}
+              </p>
+            </div>
+          </div>
+
+          <div style="margin-bottom:10px">
+            <strong>Name:</strong>
+            <p style="margin:4px 0;color:#64748b">${manager.name || "N/A"}</p>
+          </div>
+
           <div style="margin-bottom:10px">
             <strong>Email:</strong>
             <p style="margin:4px 0;color:#64748b">${manager.email || "N/A"}</p>
@@ -110,14 +153,16 @@ const ApproveClubManager = () => {
 
           <div style="margin-bottom:10px">
             <strong>Address:</strong>
-            <p style="margin:4px 0;color:#64748b">${manager.address || "N/A"}</p>
+            <p style="margin:4px 0;color:#64748b">${
+              manager.address || "N/A"
+            }</p>
           </div>
 
           <div style="margin-bottom:10px">
             <strong>Status:</strong>
-            <p style="margin:4px 0;color:#64748b;text-transform:capitalize">${
-              manager.status || "pending"
-            }</p>
+            <p style="margin:4px 0;color:#64748b;text-transform:capitalize">
+              ${manager.status || "pending"}
+            </p>
           </div>
 
           <div style="margin-bottom:10px">
@@ -137,46 +182,16 @@ const ApproveClubManager = () => {
     });
   };
 
-  const handleDelete = async (manager) => {
-    const confirm = await Swal.fire({
-      title: "Delete application?",
-      text: `${manager.name}'s manager application will be permanently deleted.`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#6b7280",
-      confirmButtonText: "Yes, delete",
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    try {
-      const res = await axiosSecure.delete(`/club-managers/${manager._id}`);
-
-      if (res.data.deletedCount > 0) {
-        refetch();
-        Swal.fire(
-          "Deleted!",
-          "Manager application has been deleted.",
-          "success",
-        );
-      } else {
-        Swal.fire("Not Deleted", "No application was deleted.", "info");
-      }
-    } catch (error) {
-      console.error(error);
-      Swal.fire(
-        "Delete Failed",
-        "Could not delete this application. Check your backend DELETE /club-managers/:id route.",
-        "error",
-      );
-    }
-  };
-
   const getStatusBadge = (status) => {
     if (status === "approved") return "badge-success";
     if (status === "rejected") return "badge-error";
     return "badge-warning";
+  };
+
+  const getStatusIcon = (status) => {
+    if (status === "approved") return <FaCircleCheck />;
+    if (status === "rejected") return <FaBan />;
+    return <FaClock />;
   };
 
   if (isLoading) {
@@ -220,6 +235,7 @@ const ApproveClubManager = () => {
 
                 <p className="mt-2 text-sm text-slate-300">
                   Review pending users who applied to become Club Managers.
+                  Approved and rejected applications are kept as history.
                 </p>
               </div>
 
@@ -274,21 +290,34 @@ const ApproveClubManager = () => {
             <tbody>
               {managerApplications.map((manager, index) => {
                 const isPending = manager.status === "pending";
+                const photo = getApplicantPhoto(manager);
 
                 return (
                   <tr key={manager._id} className="hover whitespace-nowrap">
                     <td>{index + 1}</td>
 
                     <td>
-                      <div>
-                        <p className="font-black text-sm">
-                          {manager.name || "Unknown User"}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <div className="avatar shrink-0">
+                          <div className="h-11 w-11 rounded-xl ring ring-primary/20 ring-offset-1">
+                            <img
+                              src={photo}
+                              alt={manager.name || "Applicant"}
+                              className="object-cover"
+                            />
+                          </div>
+                        </div>
 
-                        <p className="text-[11px] opacity-60 flex items-center gap-1">
-                          <FaEnvelope />
-                          {manager.email || "N/A"}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="font-black text-sm truncate max-w-[170px]">
+                            {manager.name || "Unknown User"}
+                          </p>
+
+                          <p className="text-[11px] opacity-60 flex items-center gap-1 truncate max-w-[190px]">
+                            <FaEnvelope className="shrink-0" />
+                            {manager.email || "N/A"}
+                          </p>
+                        </div>
                       </div>
                     </td>
 
@@ -308,60 +337,46 @@ const ApproveClubManager = () => {
 
                     <td>
                       <span
-                        className={`badge badge-xs font-bold uppercase ${getStatusBadge(
+                        className={`badge badge-xs font-bold uppercase gap-1 ${getStatusBadge(
                           manager.status,
                         )}`}
                       >
+                        {getStatusIcon(manager.status)}
                         {manager.status || "pending"}
                       </span>
                     </td>
 
-                    <td>
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleApprove(manager)}
-                          disabled={!isPending}
-                          className="btn btn-ghost btn-xs min-h-0 h-7 px-2 text-success tooltip disabled:opacity-30"
-                          data-tip={
-                            isPending
-                              ? "Approve"
-                              : "Only pending applications can be approved"
-                          }
-                        >
-                          <FaUserCheck size={13} />
-                        </button>
+                    <td className="overflow-visible">
+                      <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                        {isPending && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleApprove(manager)}
+                              className="btn btn-ghost btn-xs min-h-0 h-7 px-2 text-success"
+                              title="Approve Application"
+                            >
+                              <FaUserCheck size={13} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleReject(manager)}
+                              className="btn btn-ghost btn-xs min-h-0 h-7 px-2 text-warning"
+                              title="Reject Application"
+                            >
+                              <FaUserXmark size={13} />
+                            </button>
+                          </>
+                        )}
 
                         <button
                           type="button"
                           onClick={() => handleView(manager)}
-                          className="btn btn-ghost btn-xs min-h-0 h-7 px-2 text-info tooltip"
-                          data-tip="View Details"
+                          className="btn btn-ghost btn-xs min-h-0 h-7 px-2 text-info"
+                          title="View Details"
                         >
                           <FaEye size={13} />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleReject(manager)}
-                          disabled={!isPending}
-                          className="btn btn-ghost btn-xs min-h-0 h-7 px-2 text-warning tooltip disabled:opacity-30"
-                          data-tip={
-                            isPending
-                              ? "Reject"
-                              : "Only pending applications can be rejected"
-                          }
-                        >
-                          <FaUserXmark size={13} />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(manager)}
-                          className="btn btn-ghost btn-xs min-h-0 h-7 px-2 text-error tooltip"
-                          data-tip="Delete Application"
-                        >
-                          <FaTrashCan size={13} />
                         </button>
                       </div>
                     </td>
