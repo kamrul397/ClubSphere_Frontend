@@ -7,6 +7,7 @@ import {
   FaPenToSquare,
   FaUsers,
   FaCalendarDays,
+  FaCreditCard,
 } from "react-icons/fa6";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
@@ -198,9 +199,30 @@ const MyClubs = () => {
                                 {club.membersCount}
                               </span>
                             </div>
-
                             <p className="text-[9px] font-bold uppercase tracking-wide opacity-70 leading-none">
                               {club.membersCount === 1 ? "Member" : "Members"}
+                            </p>
+                          </Link>
+
+                          <Link
+                            to={`/dashboard/my-clubs/payments/${club._id}`}
+                            className="group min-w-[82px] rounded-lg border border-accent/20 bg-accent/5 px-2 py-1 text-center transition-all duration-300 hover:bg-accent hover:text-white hover:shadow-md"
+                          >
+                            <div className="flex items-center justify-center gap-1">
+                              <FaCreditCard
+                                size={13}
+                                className="text-accent group-hover:text-white"
+                              />
+                              <span className="text-sm font-black">
+                                {club.membershipFee === 0
+                                  ? "Free"
+                                  : `$${club.membershipFee}`}
+                                {/* Displaying "Free" if membershipFee is 0, otherwise displaying the fee */}
+                              </span>
+                            </div>
+                            <p className="text-[9px] font-bold uppercase tracking-wide opacity-70 leading-none">
+                              {club.membershipFee === 0 ? "Free" : "Fee"}{" "}
+                              {/* Conditional text */}
                             </p>
                           </Link>
 
@@ -218,7 +240,6 @@ const MyClubs = () => {
                                 {club.eventsCount}
                               </span>
                             </div>
-
                             <p className="text-[9px] font-bold uppercase tracking-wide opacity-70 leading-none">
                               {club.eventsCount === 1 ? "Event" : "Events"}
                             </p>

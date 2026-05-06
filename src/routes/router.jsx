@@ -36,6 +36,9 @@ import ApproveClubs from "../pages/dashboard/adminPage/ApproveClubs";
 import ClubDetails from "../pages/ClubDetails";
 import Profile from "../pages/shared/Profile";
 import AdminOverview from "../pages/dashboard/adminPage/AdminOverview";
+import MembershipPayment from "../pages/dashboard/membersPage/MembershipPayment";
+import ClubPaymentsPage from "../pages/dashboard/managerPage/ClubPaymentsPage";
+import PaymentPage from "../pages/dashboard/membersPage/PaymentPage";
 
 export const router = createBrowserRouter([
   {
@@ -105,10 +108,10 @@ export const router = createBrowserRouter([
     ),
     children: [
       // Common / Member routes
-      {
-        path: "payment",
-        element: <Payment />,
-      },
+      // {
+      //   path: "payment",
+      //   element: <Payment />,
+      // },
       {
         path: "be-a-creator",
         element: <BeACreator />,
@@ -124,6 +127,14 @@ export const router = createBrowserRouter([
       {
         path: "member-joined-events",
         element: <MemberJoinedEvents />,
+      },
+      {
+        path: "membership-payment/:clubId",
+        element: <MembershipPayment />,
+      },
+      {
+        path: "payment/:eventId",
+        element: <PaymentPage />,
       },
 
       // Club Manager routes
@@ -183,6 +194,10 @@ export const router = createBrowserRouter([
             path: "event-participants/:eventId",
             element: <EventParticipants />,
           },
+          {
+            path: "payments/:clubId",
+            element: <ClubPaymentsPage></ClubPaymentsPage>,
+          },
         ],
       },
 
@@ -216,6 +231,14 @@ export const router = createBrowserRouter([
         element: (
           <AdminRoutes>
             <AdminOverview></AdminOverview>
+          </AdminRoutes>
+        ),
+      },
+      {
+        path: "payment",
+        element: (
+          <AdminRoutes>
+            <Payment></Payment>
           </AdminRoutes>
         ),
       },

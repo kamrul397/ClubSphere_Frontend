@@ -4,12 +4,14 @@ import { FaArrowLeft } from "react-icons/fa";
 import useAxiosSecure from "../hooks/useAxiosSecure";
 import useAuth from "../hooks/useAuth"; // Assuming you have a useAuth hook
 import Swal from "sweetalert2";
+import useRole from "../hooks/useRole";
 
 const ClubDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth(); // Get current logged-in user
+  const { role } = useRole(); // Get user role
 
   const { data: club = {}, isLoading } = useQuery({
     queryKey: ["club", id],
@@ -31,54 +33,94 @@ const ClubDetails = () => {
     },
   });
 
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-lg mb-4">Please log in to view club details.</p>
+        <button onClick={() => navigate("/login")} className="btn btn-primary">
+          Go to Login
+        </button>
+      </div>
+    );
+  }
+
   const isAlreadyMember = membershipData?.isMember;
 
   const handleJoinClub = async () => {
-    if (!user) {
-      return Swal.fire(
-        "Please Login",
-        "You must be logged in to join a club",
-        "warning",
-      );
+    if (role !== "member") {
+      Swal.fire("Access Denied", "Only members can join clubs.", "warning");
+      return;
     }
 
-    const joinData = {
+    if (Number(club.membershipFee) > 0) {
+      navigate(`/dashboard/membership-payment/${club._id}`);
+      return;
+    }
+
+    const memberInfo = {
       clubId: club._id,
       clubName: club.clubName,
       userEmail: user.email,
       userName: user.displayName,
-      fee: club.membershipFee,
-      joinedDate: new Date(),
-      status: club.membershipFee > 0 ? "pending_payment" : "active",
+      fee: 0,
+      status: "active",
+      joinedDate: new Date().toISOString(),
     };
 
-    if (club.membershipFee === 0 || !club.membershipFee) {
-      // Free Club Logic
-      try {
-        const res = await axiosSecure.post("/club-members", joinData);
-        if (res.data.insertedId) {
-          refetchMembership(); // Refresh membership status
-          Swal.fire({
-            icon: "success",
-            title: "Joined Successfully!",
-            text: `You are now a member of ${club.clubName}`,
-            showConfirmButton: false,
-            timer: 2000,
-          });
-        }
-      } catch (error) {
-        Swal.fire("Error", "Could not join the club. Try again.", "error");
-      }
-    } else {
-      // Paid Club Logic (Redirect to Payment)
-      Swal.fire(
-        "Payment Required",
-        `Redirecting to pay $${club.membershipFee}...`,
-        "info",
-      );
-      // navigate('/payment', { state: { club } }); // Future step
+    const res = await axiosSecure.post("/club-members", memberInfo);
+
+    if (res.data.insertedId) {
+      Swal.fire("Joined!", "You have joined this club.", "success");
+      refetchMembership();
     }
   };
+
+  // const handleJoinClub = async () => {
+  //   if (!user) {
+  //     return Swal.fire(
+  //       "Please Login",
+  //       "You must be logged in to join a club",
+  //       "warning",
+  //     );
+  //   }
+
+  //   const joinData = {
+  //     clubId: club._id,
+  //     clubName: club.clubName,
+  //     userEmail: user.email,
+  //     userName: user.displayName,
+  //     fee: club.membershipFee,
+  //     joinedDate: new Date(),
+  //     status: club.membershipFee > 0 ? "pending_payment" : "active",
+  //   };
+
+  //   if (club.membershipFee === 0 || !club.membershipFee) {
+  //     // Free Club Logic
+  //     try {
+  //       const res = await axiosSecure.post("/club-members", joinData);
+  //       if (res.data.insertedId) {
+  //         refetchMembership(); // Refresh membership status
+  //         Swal.fire({
+  //           icon: "success",
+  //           title: "Joined Successfully!",
+  //           text: `You are now a member of ${club.clubName}`,
+  //           showConfirmButton: false,
+  //           timer: 2000,
+  //         });
+  //       }
+  //     } catch (error) {
+  //       Swal.fire("Error", "Could not join the club. Try again.", "error");
+  //     }
+  //   } else {
+  //     // Paid Club Logic (Redirect to Payment)
+  //     Swal.fire(
+  //       "Payment Required",
+  //       `Redirecting to pay $${club.membershipFee}...`,
+  //       "info",
+  //     );
+  //     // navigate('/payment', { state: { club } }); // Future step
+  //   }
+  // };
 
   if (isLoading)
     return (

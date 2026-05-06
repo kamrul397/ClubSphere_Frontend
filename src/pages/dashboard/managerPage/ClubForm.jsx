@@ -368,16 +368,25 @@ const ClubForm = () => {
                       id="membershipFee"
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="1" // Only allows whole numbers
                       placeholder="0"
                       className={`input input-bordered w-full pl-11 bg-base-100 ${
                         errors.membershipFee ? "input-error" : ""
                       }`}
+                      onKeyDown={(e) => {
+                        // Prevent entering non-integer characters
+                        if ([".", ",", "e", "E", "+", "-"].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
                       {...register("membershipFee", {
                         required: "Membership fee is required",
-                        min: {
-                          value: 0,
-                          message: "Fee cannot be negative",
+                        validate: (value) => {
+                          // Ensure value is an integer
+                          return (
+                            Number.isInteger(Number(value)) ||
+                            "Membership fee must be an integer"
+                          );
                         },
                       })}
                     />
