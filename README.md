@@ -5,7 +5,7 @@ ClubSphere is a full-stack MERN web application for discovering, joining, and ma
 ## Live Links
 
 - Live Site: https://clubspere-firebase.web.app
-- Backend API: https://club-sphere-backend-psi.vercel.app
+- Backend API: https://clubsphere-backend-1.onrender.com
 
 ## Admin Access
 
@@ -84,7 +84,7 @@ The purpose of ClubSphere is to provide a role-based platform where local commun
 ## Deployment
 
 - Frontend: Firebase Hosting
-- Backend: Vercel
+- Backend: Render
 - Database: MongoDB Atlas
 
 ## Environment Variables
