@@ -1,33 +1,43 @@
 # ClubSphere
 
-ClubSphere is a full-stack MERN web application for discovering, joining, and managing local clubs. Members can browse clubs, join approved clubs, and register for events. Club Managers can create clubs and manage club events, while Admins can review applications and monitor platform activity.
+ClubSphere is a full-stack MERN web application for discovering, joining, and managing local clubs. Members can browse approved clubs, join clubs through membership, and register for free events. Club Managers can create and manage clubs and events, while Admins can review applications, manage users, and monitor platform activity.
 
 ## Live Links
 
 - Live Site: https://clubspere-firebase.web.app
 - Backend API: https://club-sphere-backend-psi.vercel.app
 
+## Admin Access
+
+- Admin Email: `Abubakar123@gmail.com`
+- Admin Password: `Kamrulislam#123`
+
+## Project Purpose
+
+The purpose of ClubSphere is to provide a role-based platform where local communities can manage clubs, memberships, and events in one place. It supports secure authentication, protected dashboards, membership payments, and admin-level platform control.
+
 ## Main Features
 
 - Firebase Authentication with email/password and Google login
 - Role-based dashboard for Member, Club Manager, and Admin
 - Members can browse approved clubs and upcoming events
-- Members can join clubs through free or paid membership
-- All events are free for members
-- Club Managers can create and update clubs
-- Club Managers can create and manage free events
-- Club Managers can view event participants
+- Members can join clubs with free or paid membership
+- Stripe payment integration for paid club memberships
+- All event registrations are free for members
+- Club Managers can create, update, and manage clubs
+- Club Managers can create and update free events
+- Club Managers can view club members and event participants
 - Admin can approve or reject Club Manager applications
 - Admin can manage users and monitor platform data
-- Secure backend APIs with Firebase token verification
-- Responsive UI for desktop, tablet, and mobile
+- Protected backend APIs using Firebase token verification
+- Responsive design for desktop, tablet, and mobile
 
 ## User Roles
 
 ### Member
 
 - Browse clubs and events
-- Join clubs
+- Join approved clubs
 - Register for free events
 - View joined clubs and registered events
 - Apply to become a Club Manager
@@ -43,7 +53,7 @@ ClubSphere is a full-stack MERN web application for discovering, joining, and ma
 
 - Manage users
 - Approve or reject Club Manager requests
-- Monitor clubs, events, and payments
+- Monitor clubs, events, memberships, and payments
 
 ## Tech Stack
 
@@ -59,6 +69,7 @@ ClubSphere is a full-stack MERN web application for discovering, joining, and ma
 - Firebase Authentication
 - Axios
 - SweetAlert2
+- React Icons
 
 ### Backend
 
@@ -78,13 +89,38 @@ ClubSphere is a full-stack MERN web application for discovering, joining, and ma
 
 ## Environment Variables
 
-Firebase config, MongoDB credentials, Stripe keys, and API URLs are secured using environment variables.
+Firebase configuration, MongoDB credentials, Stripe keys, and backend API URLs are secured using environment variables.
+
+## Important NPM Packages
+
+### Client Side
+
+- `react`
+- `react-router-dom`
+- `@tanstack/react-query`
+- `react-hook-form`
+- `firebase`
+- `axios`
+- `sweetalert2`
+- `framer-motion`
+- `react-icons`
+- `tailwindcss`
+- `daisyui`
+
+### Server Side
+
+- `express`
+- `mongodb`
+- `firebase-admin`
+- `stripe`
+- `cors`
+- `dotenv`
 
 ## GitHub Repositories
 
-- Client Repository: `https://github.com/kamrul397/ClubSphere_Frontend.git`
-- Server Repository: `https://github.com/kamrul397/ClubSphere_Backend.git`
+- Client Repository: https://github.com/kamrul397/ClubSphere_Frontend.git
+- Server Repository: https://github.com/kamrul397/ClubSphere_Backend.git
 
 ## Project Note
 
-In this project, club membership can be free or paid, but all event registration is free for members.
+In this project, club membership can be free or paid, but all event registrations are free for members.
