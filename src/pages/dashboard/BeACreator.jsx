@@ -16,15 +16,17 @@ import {
   FaClock,
   FaHouse,
 } from "react-icons/fa6";
-
+import useAxiosSecure from "../../hooks/useAxiosSecure";
+import useAxiosPublic from "../../hooks/useAxiosPublic";
 import useAuth from "../../hooks/useAuth";
 import useRole from "../../hooks/useRole";
-import useAxiosSecure from "../../hooks/useAxiosSecure";
 
 const BeACreator = () => {
   const axiosSecure = useAxiosSecure();
+  const axiosPublic = useAxiosPublic();
+
   const { user } = useAuth();
-  const { role } = useRole();
+  const { role, isRoleLoading } = useRole();
 
   const [applicationSent, setApplicationSent] = useState(false);
   const [submittedAt, setSubmittedAt] = useState(null);
@@ -49,13 +51,24 @@ const BeACreator = () => {
     refetch: refetchApplication,
   } = useQuery({
     queryKey: ["myManagerApplication", user?.email],
-    queryFn: async () => {
-      const res = await axiosSecure.get(
-        `/club-managers/my-application/${user.email}`,
-      );
-      return res.data;
-    },
     enabled: !!user?.email && role === "member",
+    queryFn: async () => {
+      try {
+        const res = await axiosSecure.get(
+          `/club-managers/my-application/${user.email}`,
+        );
+
+        return res.data || { hasApplication: false, application: null };
+      } catch (error) {
+        console.error("Application check failed:", {
+          status: error.response?.status,
+          data: error.response?.data,
+          url: error.config?.baseURL + error.config?.url,
+        });
+
+        return { hasApplication: false, application: null };
+      }
+    },
   });
 
   useEffect(() => {
@@ -70,33 +83,51 @@ const BeACreator = () => {
   }, [user, reset]);
 
   const onSubmit = async (data) => {
+    if (!user?.email) {
+      Swal.fire({
+        icon: "warning",
+        title: "Login Required",
+        text: "Please login before submitting your application.",
+      });
+      return;
+    }
+
     if (role !== "member") {
-      Swal.fire(
-        "Access Denied",
-        "Only members can apply to become a Club Manager.",
-        "warning",
-      );
+      Swal.fire({
+        icon: "warning",
+        title: "Access Denied",
+        text: "Only members can apply to become a Club Manager.",
+      });
       return;
     }
 
     const applicationData = {
-      name: data.name,
-      email: data.email,
+      name: data.name.trim(),
+      email: user.email,
       photoURL: user?.photoURL || "",
-      nid: data.nid,
-      address: data.address,
-      roleRequested: "clubManager",
-      status: "pending",
-      createdAt: new Date(),
+      nid: data.nid.trim(),
+      address: data.address.trim(),
     };
 
     try {
+      console.log("API URL:", import.meta.env.VITE_API_URL);
+      console.log("Submitting manager application:", applicationData);
+
+      // Make sure this Firebase user also exists in MongoDB.
+      // Your backend /club-managers route rejects if user is not found.
+      await axiosPublic.post("/users", {
+        name: applicationData.name,
+        email: user.email,
+        photoURL: user?.photoURL || "",
+        lastLogin: new Date(),
+      });
+
       const res = await axiosSecure.post("/club-managers", applicationData);
 
-      if (res.data.insertedId) {
+      if (res.data?.insertedId) {
         setApplicationSent(true);
         setSubmittedAt(new Date());
-        refetchApplication();
+        await refetchApplication();
 
         Swal.fire({
           icon: "success",
@@ -107,22 +138,50 @@ const BeACreator = () => {
         });
 
         reset({
-          name: user?.displayName || "",
+          name: user?.displayName || applicationData.name,
           email: user?.email || "",
           nid: "",
           address: "",
         });
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "Request Completed",
+          text: res.data?.message || "Your application request was processed.",
+        });
+
+        await refetchApplication();
       }
     } catch (error) {
-      console.error(error);
+      console.error("Manager application submit failed:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.baseURL + error.config?.url,
+      });
 
-      Swal.fire(
-        "Application Failed",
-        error?.response?.data?.message || "Failed to submit application.",
-        "error",
-      );
+      const backendMessage = error?.response?.data?.message;
 
-      refetchApplication();
+      let message = backendMessage || "Failed to submit application.";
+
+      if (error.response?.status === 401) {
+        message =
+          "Authorization failed. Please logout, login again, and try once more.";
+      }
+
+      if (error.response?.status === 403) {
+        message =
+          backendMessage ||
+          "You are not allowed to submit this application with this account.";
+      }
+
+      Swal.fire({
+        icon: "error",
+        title: "Application Failed",
+        text: message,
+      });
+
+      await refetchApplication();
     }
   };
 
@@ -138,7 +197,7 @@ const BeACreator = () => {
       ? new Date(existingApplication.createdAt).toLocaleDateString()
       : "Just now";
 
-  if (!role || applicationLoading) {
+  if (isRoleLoading || !role || applicationLoading) {
     return (
       <div className="h-full flex items-center justify-center bg-base-100">
         <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -401,6 +460,10 @@ const BeACreator = () => {
                       }`}
                       {...register("name", {
                         required: "Name is required",
+                        minLength: {
+                          value: 3,
+                          message: "Name must be at least 3 characters",
+                        },
                       })}
                     />
                   </div>
@@ -525,7 +588,7 @@ const BeACreator = () => {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !user?.email}
                   className="btn btn-primary text-white min-w-[190px]"
                 >
                   {isSubmitting ? (

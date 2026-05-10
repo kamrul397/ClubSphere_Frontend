@@ -30,7 +30,11 @@ const Googlelogin = () => {
         lastLogin: new Date(),
       };
 
-      await axiosPublic.post("/users", userInfo);
+      try {
+        await axiosPublic.post("/users", userInfo);
+      } catch (dbError) {
+        console.error("User save failed:", dbError?.response?.data || dbError);
+      }
 
       Swal.fire({
         icon: "success",
@@ -42,14 +46,13 @@ const Googlelogin = () => {
 
       navigate(redirectPath, { replace: true });
     } catch (error) {
-      console.error(error);
+      console.error("Google auth failed:", error);
 
       Swal.fire({
         icon: "error",
         title: "Google Sign In Failed",
         text:
-          error?.response?.data?.message ||
-          "Could not continue with Google. Please try again.",
+          error?.message || "Could not continue with Google. Please try again.",
       });
     } finally {
       setGoogleLoading(false);

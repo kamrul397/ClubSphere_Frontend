@@ -9,7 +9,6 @@ import {
   FaCalendarDay,
   FaLocationDot,
   FaUsers,
-  FaDollarSign,
   FaCircleInfo,
 } from "react-icons/fa6";
 
@@ -18,43 +17,47 @@ const CreateEvent = () => {
   const navigate = useNavigate();
   const axiosSecure = useAxiosSecure();
 
-  // Identify Mode
   const isEditMode = !!eventId;
 
-  // Use the store to get the club name for the heading[cite: 13]
   const club = useClubStore((state) => state.selectedClub);
 
   const {
     register,
     handleSubmit,
-    watch,
     reset,
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      isPaid: "false",
-    },
-  });
+    formState: { errors, isSubmitting },
+  } = useForm();
 
-  // Watch isPaid to show/hide the fee field[cite: 13]
-  const isPaidValue = watch("isPaid");
+  const formatDateTimeLocal = (dateValue) => {
+    if (!dateValue) return "";
 
-  // 1. Fetch event data if in Edit Mode[cite: 13]
+    const date = new Date(dateValue);
+
+    if (Number.isNaN(date.getTime())) return "";
+
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60 * 1000);
+
+    return localDate.toISOString().slice(0, 16);
+  };
+
   const { data: eventData, isLoading } = useQuery({
     queryKey: ["event", eventId],
+    enabled: isEditMode,
     queryFn: async () => {
       const res = await axiosSecure.get(`/events/${eventId}`);
       return res.data;
     },
-    enabled: isEditMode,
   });
 
-  // 2. Pre-fill form when data arrives[cite: 13]
   useEffect(() => {
     if (isEditMode && eventData) {
       reset({
-        ...eventData,
-        isPaid: eventData.isPaid ? "true" : "false",
+        title: eventData.title || "",
+        description: eventData.description || "",
+        eventDate: formatDateTimeLocal(eventData.eventDate),
+        location: eventData.location || "",
+        maxAttendees: eventData.maxAttendees || "",
       });
     }
   }, [eventData, isEditMode, reset]);
@@ -62,23 +65,27 @@ const CreateEvent = () => {
   const onSubmit = async (data) => {
     try {
       const eventPayload = {
-        clubId: isEditMode ? eventData.clubId : clubId, //[cite: 13]
-        title: data.title,
-        description: data.description,
+        clubId: isEditMode ? eventData.clubId : clubId,
+        title: data.title.trim(),
+        description: data.description.trim(),
         eventDate: data.eventDate,
-        location: data.location,
-        isPaid: data.isPaid === "true",
-        eventFee: data.isPaid === "true" ? Number(data.eventFee) : 0,
+        location: data.location.trim(),
+
+        // All events are always free
+        isPaid: false,
+        eventFee: 0,
+
         maxAttendees: data.maxAttendees ? Number(data.maxAttendees) : null,
-        createdAt: isEditMode ? eventData.createdAt : new Date(), //[cite: 13]
-        updatedAt: new Date(),
+        createdAt: isEditMode ? eventData.createdAt : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       let res;
+
       if (isEditMode) {
-        res = await axiosSecure.put(`/events/${eventId}`, eventPayload); //[cite: 13]
+        res = await axiosSecure.put(`/events/${eventId}`, eventPayload);
       } else {
-        res = await axiosSecure.post("/events", eventPayload); //[cite: 13]
+        res = await axiosSecure.post("/events", eventPayload);
       }
 
       if (
@@ -86,25 +93,48 @@ const CreateEvent = () => {
         res.data.modifiedCount > 0 ||
         res.data.acknowledged
       ) {
-        Swal.fire(
-          "Success",
-          `Event ${isEditMode ? "updated" : "created"} successfully`,
-          "success",
-        );
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: `Event ${isEditMode ? "updated" : "created"} successfully.`,
+          timer: 1500,
+          showConfirmButton: false,
+        });
+
         const finalClubId = isEditMode ? eventData.clubId : clubId;
-        navigate(`/dashboard/my-clubs/manage-events/${finalClubId}`); //[cite: 13]
+        navigate(`/dashboard/my-clubs/manage-events/${finalClubId}`);
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "No Changes",
+          text: "No event changes were saved.",
+        });
       }
     } catch (error) {
-      Swal.fire("Error", "Operation failed", "error");
+      console.error("Event operation failed:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.baseURL + error.config?.url,
+      });
+
+      Swal.fire({
+        icon: "error",
+        title: "Operation Failed",
+        text:
+          error.response?.data?.message ||
+          `Failed to ${isEditMode ? "update" : "create"} event.`,
+      });
     }
   };
 
-  if (isEditMode && isLoading)
+  if (isEditMode && isLoading) {
     return (
       <div className="text-center p-10">
-        <span className="loading loading-spinner loading-lg"></span>
+        <span className="loading loading-spinner loading-lg text-primary"></span>
       </div>
     );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-8">
@@ -112,11 +142,13 @@ const CreateEvent = () => {
         {/* Header Section */}
         <div className="bg-primary p-6 text-primary-content">
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <FaCalendarDay /> {isEditMode ? "Edit Event" : "Create New Event"}
+            <FaCalendarDay />
+            {isEditMode ? "Edit Event" : "Create New Event"}
           </h2>
+
           <p className="opacity-80 text-sm mt-1">
             {isEditMode
-              ? `Adjusting details for ${eventData?.title}`
+              ? `Adjusting details for ${eventData?.title || "this event"}`
               : `Scheduling an activity for ${club?.clubName || "your club"}`}
           </p>
         </div>
@@ -126,12 +158,22 @@ const CreateEvent = () => {
             {/* Title */}
             <div className="form-control md:col-span-2">
               <label className="label font-semibold">Event Title</label>
+
               <input
                 type="text"
                 placeholder="e.g. Annual Photography Workshop"
-                className={`input input-bordered w-full ${errors.title ? "input-error" : ""}`}
-                {...register("title", { required: "Title is required" })}
+                className={`input input-bordered w-full ${
+                  errors.title ? "input-error" : ""
+                }`}
+                {...register("title", {
+                  required: "Title is required",
+                  minLength: {
+                    value: 3,
+                    message: "Title must be at least 3 characters",
+                  },
+                })}
               />
+
               {errors.title && (
                 <span className="text-error text-xs mt-1">
                   {errors.title.message}
@@ -142,95 +184,123 @@ const CreateEvent = () => {
             {/* Description */}
             <div className="form-control md:col-span-2">
               <label className="label font-semibold">Description</label>
+
               <textarea
                 placeholder="What is this event about?"
-                className="textarea textarea-bordered h-24"
+                className={`textarea textarea-bordered h-24 ${
+                  errors.description ? "textarea-error" : ""
+                }`}
                 {...register("description", {
                   required: "Description is required",
+                  minLength: {
+                    value: 10,
+                    message: "Description must be at least 10 characters",
+                  },
                 })}
               />
+
+              {errors.description && (
+                <span className="text-error text-xs mt-1">
+                  {errors.description.message}
+                </span>
+              )}
             </div>
 
             {/* Date */}
             <div className="form-control">
               <label className="label font-semibold flex items-center gap-2">
-                <FaCalendarDay className="text-primary" /> Event Date
+                <FaCalendarDay className="text-primary" />
+                Event Date
               </label>
+
               <input
                 type="datetime-local"
-                className="input input-bordered"
-                {...register("eventDate", { required: "Date is required" })}
+                className={`input input-bordered ${
+                  errors.eventDate ? "input-error" : ""
+                }`}
+                {...register("eventDate", {
+                  required: "Date is required",
+                })}
               />
+
+              {errors.eventDate && (
+                <span className="text-error text-xs mt-1">
+                  {errors.eventDate.message}
+                </span>
+              )}
             </div>
 
             {/* Location */}
             <div className="form-control">
               <label className="label font-semibold flex items-center gap-2">
-                <FaLocationDot className="text-primary" /> Location
+                <FaLocationDot className="text-primary" />
+                Location
               </label>
+
               <input
                 type="text"
-                placeholder="Venue name or Online link"
-                className="input input-bordered"
-                {...register("location", { required: "Location is required" })}
+                placeholder="Venue name or online link"
+                className={`input input-bordered ${
+                  errors.location ? "input-error" : ""
+                }`}
+                {...register("location", {
+                  required: "Location is required",
+                })}
               />
+
+              {errors.location && (
+                <span className="text-error text-xs mt-1">
+                  {errors.location.message}
+                </span>
+              )}
             </div>
 
             {/* Max Attendees */}
             <div className="form-control">
               <label className="label font-semibold flex items-center gap-2">
-                <FaUsers className="text-primary" /> Max Attendees (Optional)
+                <FaUsers className="text-primary" />
+                Max Attendees
               </label>
+
               <input
                 type="number"
                 placeholder="Leave blank for unlimited"
-                className="input input-bordered"
-                {...register("maxAttendees", { min: 1 })}
+                className={`input input-bordered ${
+                  errors.maxAttendees ? "input-error" : ""
+                }`}
+                {...register("maxAttendees", {
+                  min: {
+                    value: 1,
+                    message: "Max attendees must be at least 1",
+                  },
+                })}
               />
+
+              {errors.maxAttendees && (
+                <span className="text-error text-xs mt-1">
+                  {errors.maxAttendees.message}
+                </span>
+              )}
             </div>
 
-            {/* Paid Toggle */}
+            {/* Free Event Info */}
             <div className="form-control">
               <label className="label font-semibold flex items-center gap-2">
-                <FaDollarSign className="text-primary" /> Access Type
+                <FaCircleInfo className="text-primary" />
+                Access Type
               </label>
-              <select
-                className="select select-bordered"
-                {...register("isPaid")}
-              >
-                <option value="false">Free Event</option>
-                <option value="true">Paid Event</option>
-              </select>
-            </div>
 
-            {/* Conditional Event Fee */}
-            {isPaidValue === "true" && (
-              <div className="form-control md:col-span-2 animate-fadeIn">
-                <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
-                  <label className="label font-bold text-warning-content">
-                    Event Fee ($)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Enter registration amount"
-                    className="input input-bordered w-full bg-base-100"
-                    {...register("eventFee", {
-                      required:
-                        isPaidValue === "true"
-                          ? "Fee is required for paid events"
-                          : false,
-                      min: { value: 1, message: "Fee must be at least $1" },
-                    })}
-                  />
-                  {errors.eventFee && (
-                    <span className="text-error text-xs mt-1">
-                      {errors.eventFee.message}
-                    </span>
-                  )}
+              <div className="flex items-center justify-between rounded-xl border border-success/20 bg-success/10 px-4 py-3">
+                <div>
+                  <p className="font-bold text-success">Free Event</p>
+                  <p className="text-xs text-base-content/60">
+                    All events are free for members.
+                  </p>
                 </div>
+
+                <span className="badge badge-success text-white">FREE</span>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Form Actions */}
@@ -242,8 +312,22 @@ const CreateEvent = () => {
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary flex-1">
-              {isEditMode ? "Update Event" : "Create Event"}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn btn-primary flex-1"
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  {isEditMode ? "Updating..." : "Creating..."}
+                </>
+              ) : isEditMode ? (
+                "Update Event"
+              ) : (
+                "Create Event"
+              )}
             </button>
           </div>
         </form>

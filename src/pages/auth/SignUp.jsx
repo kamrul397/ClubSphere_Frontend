@@ -15,14 +15,14 @@ import {
   FaUserPlus,
 } from "react-icons/fa6";
 
-import useAuth from "../../hooks/useAuth";
 import Googlelogin from "./Googlelogin";
-import useAxiosSecure from "../../hooks/useAxiosSecure";
+import useAxiosPublic from "../../hooks/useAxiosPublic";
+import useAuth from "../../hooks/useAuth";
 
 const SignUp = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const axiosSecure = useAxiosSecure();
+  const axiosPublic = useAxiosPublic();
 
   const { registerUser, updateUserProfile } = useAuth();
 
@@ -53,41 +53,111 @@ const SignUp = () => {
     setPhotoPreview("");
   }, [selectedPhoto]);
 
+  const uploadImageToImgBB = async (photoFile) => {
+    if (!photoFile) return "";
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(photoFile.type)) {
+      throw new Error("Only JPG, PNG, or WEBP images are allowed.");
+    }
+
+    if (photoFile.size > 2 * 1024 * 1024) {
+      throw new Error("Image is too large. Please upload an image under 2MB.");
+    }
+
+    const imageApiKey = import.meta.env.VITE_imageUploadUrl;
+
+    if (!imageApiKey) {
+      throw new Error(
+        "Image upload key is missing. Check VITE_imageUploadUrl.",
+      );
+    }
+
+    const formData = new FormData();
+    formData.append("image", photoFile);
+
+    const imageAPIURL = `https://api.imgbb.com/1/upload?key=${imageApiKey}`;
+
+    const imageRes = await axios.post(imageAPIURL, formData, {
+      timeout: 20000,
+    });
+
+    return imageRes?.data?.data?.display_url || "";
+  };
+
   const handleSignUp = async (data) => {
     const normalizedEmail = data.email.toLowerCase().trim();
+    const photoFile = data.photo?.[0];
 
     try {
       setRegisterLoading(true);
 
+      // Validate photo before creating Firebase user
+      if (photoFile) {
+        const allowedTypes = [
+          "image/jpeg",
+          "image/jpg",
+          "image/png",
+          "image/webp",
+        ];
+
+        if (!allowedTypes.includes(photoFile.type)) {
+          Swal.fire({
+            icon: "warning",
+            title: "Invalid Image",
+            text: "Please upload JPG, PNG, or WEBP image only.",
+          });
+          return;
+        }
+
+        if (photoFile.size > 2 * 1024 * 1024) {
+          Swal.fire({
+            icon: "warning",
+            title: "Image Too Large",
+            text: "Please upload an image smaller than 2MB.",
+          });
+          return;
+        }
+      }
+
+      // 1. Create Firebase account
       const result = await registerUser(normalizedEmail, data.password);
 
       let uploadedURL = "";
 
-      if (data.photo && data.photo.length > 0) {
-        const photoFile = data.photo[0];
-        const formData = new FormData();
-        formData.append("image", photoFile);
+      // 2. Upload image. If image upload fails, continue signup without photo.
+      if (photoFile) {
+        try {
+          uploadedURL = await uploadImageToImgBB(photoFile);
+        } catch (imageError) {
+          console.error("Image upload failed:", imageError);
 
-        const imageAPIURL = `https://api.imgbb.com/1/upload?key=${
-          import.meta.env.VITE_imageUploadUrl
-        }`;
-
-        const imageRes = await axios.post(imageAPIURL, formData);
-        uploadedURL = imageRes.data.data.display_url;
+          await Swal.fire({
+            icon: "warning",
+            title: "Photo Upload Failed",
+            text: "Your account was created, but the photo could not be uploaded. You can update it later.",
+            timer: 2500,
+            showConfirmButton: false,
+          });
+        }
       }
 
       const userInfo = {
-        name: data.name,
+        name: data.name.trim(),
         email: normalizedEmail,
         photoURL: uploadedURL,
+        lastLogin: new Date(),
       };
 
+      // 3. Update Firebase profile
       await updateUserProfile({
         displayName: userInfo.name,
         photoURL: userInfo.photoURL,
       });
 
-      await axiosSecure.post("/users", userInfo);
+      // 4. Save user to MongoDB using public API
+      await axiosPublic.post("/users", userInfo);
 
       Swal.fire({
         icon: "success",
@@ -112,8 +182,12 @@ const SignUp = () => {
         message = "Password is too weak.";
       } else if (error.code === "auth/invalid-email") {
         message = "Please enter a valid email address.";
+      } else if (error.code === "auth/network-request-failed") {
+        message = "Network problem. Please check your internet connection.";
       } else if (error?.response?.data?.message) {
         message = error.response.data.message;
+      } else if (error?.message) {
+        message = error.message;
       }
 
       Swal.fire({
@@ -279,7 +353,9 @@ const SignUp = () => {
                 <span className="label-text font-bold text-slate-700">
                   Upload Photo
                 </span>
-                <span className="label-text-alt text-slate-400">Optional</span>
+                <span className="label-text-alt text-slate-400">
+                  Optional, max 2MB
+                </span>
               </label>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[80px_1fr] sm:items-center">
@@ -298,7 +374,7 @@ const SignUp = () => {
                 <input
                   id="photo"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
                   className="file-input file-input-bordered w-full bg-white"
                   {...register("photo")}
                 />

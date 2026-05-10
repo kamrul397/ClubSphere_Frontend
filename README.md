@@ -1,16 +1,71 @@
-# React + Vite
+# ClubSphere
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ClubSphere is a role-based club management platform where members can explore clubs, join approved clubs, register for events, and apply to become club managers. Club managers can create and manage clubs, organize events, view participants, and manage club members. Admins can review club manager applications and control platform approvals.
 
-Currently, two official plugins are available:
+## Live Links
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Frontend: https://clubspere-firebase.web.app  
+Backend: https://club-sphere-backend-psi.vercel.app
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Public Users
 
-## Expanding the ESLint configuration
+- View approved clubs
+- View public events
+- Register or login with Firebase Authentication
+- Google login support
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Members
+
+- Join approved clubs
+- View joined clubs
+- Register for free events
+- View registered events
+- Apply to become a Club Manager
+
+### Club Managers
+
+- Create clubs
+- Manage own clubs
+- Create and update events
+- View event participants
+- View club members
+- View club payment records
+
+### Admin
+
+- View club manager applications
+- Approve or reject manager requests
+- Manage user roles
+- View payment records
+
+## Tech Stack
+
+### Frontend
+
+- React
+- React Router
+- TanStack React Query
+- Tailwind CSS
+- DaisyUI
+- Framer Motion
+- Firebase Authentication
+- Axios
+- SweetAlert2
+
+### Backend
+
+- Node.js
+- Express.js
+- MongoDB
+- Firebase Admin SDK
+- Stripe
+- CORS
+- dotenv
+
+### Deployment
+
+- Frontend: Firebase Hosting
+- Backend: Vercel
+- Database: MongoDB Atlas
