@@ -1,44 +1,49 @@
 # ClubSphere
 
-ClubSphere is a role-based club management platform where members can explore clubs, join approved clubs, register for events, and apply to become club managers. Club managers can create and manage clubs, organize events, view participants, and manage club members. Admins can review club manager applications and control platform approvals.
+ClubSphere is a full-stack MERN web application for discovering, joining, and managing local clubs. Members can browse clubs, join approved clubs, and register for events. Club Managers can create clubs and manage club events, while Admins can review applications and monitor platform activity.
 
 ## Live Links
 
-Frontend: https://clubspere-firebase.web.app  
-Backend: https://club-sphere-backend-psi.vercel.app
+- Live Site: https://clubspere-firebase.web.app
+- Backend API: https://club-sphere-backend-psi.vercel.app
 
-## Features
+## Main Features
 
-### Public Users
+- Firebase Authentication with email/password and Google login
+- Role-based dashboard for Member, Club Manager, and Admin
+- Members can browse approved clubs and upcoming events
+- Members can join clubs through free or paid membership
+- All events are free for members
+- Club Managers can create and update clubs
+- Club Managers can create and manage free events
+- Club Managers can view event participants
+- Admin can approve or reject Club Manager applications
+- Admin can manage users and monitor platform data
+- Secure backend APIs with Firebase token verification
+- Responsive UI for desktop, tablet, and mobile
 
-- View approved clubs
-- View public events
-- Register or login with Firebase Authentication
-- Google login support
+## User Roles
 
-### Members
+### Member
 
-- Join approved clubs
-- View joined clubs
+- Browse clubs and events
+- Join clubs
 - Register for free events
-- View registered events
+- View joined clubs and registered events
 - Apply to become a Club Manager
 
-### Club Managers
+### Club Manager
 
-- Create clubs
-- Manage own clubs
-- Create and update events
-- View event participants
+- Create and manage clubs
+- Create and update free events
 - View club members
-- View club payment records
+- View event participants
 
 ### Admin
 
-- View club manager applications
-- Approve or reject manager requests
-- Manage user roles
-- View payment records
+- Manage users
+- Approve or reject Club Manager requests
+- Monitor clubs, events, and payments
 
 ## Tech Stack
 
@@ -46,7 +51,8 @@ Backend: https://club-sphere-backend-psi.vercel.app
 
 - React
 - React Router
-- TanStack React Query
+- TanStack Query
+- React Hook Form
 - Tailwind CSS
 - DaisyUI
 - Framer Motion
@@ -64,8 +70,21 @@ Backend: https://club-sphere-backend-psi.vercel.app
 - CORS
 - dotenv
 
-### Deployment
+## Deployment
 
 - Frontend: Firebase Hosting
 - Backend: Vercel
 - Database: MongoDB Atlas
+
+## Environment Variables
+
+Firebase config, MongoDB credentials, Stripe keys, and API URLs are secured using environment variables.
+
+## GitHub Repositories
+
+- Client Repository: `https://github.com/kamrul397/ClubSphere_Frontend.git`
+- Server Repository: `https://github.com/kamrul397/ClubSphere_Backend.git`
+
+## Project Note
+
+In this project, club membership can be free or paid, but all event registration is free for members.
